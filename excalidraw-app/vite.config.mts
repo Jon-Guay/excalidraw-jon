@@ -89,6 +89,17 @@ export default defineConfig(({ mode }) => {
             "../packages/laser-pointer/src/index.ts",
           ),
         },
+        {
+          find: /^@excalidraw\/api-types$/,
+          replacement: path.resolve(
+            __dirname,
+            "../packages/api-types/src/index.ts",
+          ),
+        },
+        {
+          find: /^@excalidraw\/api-types\/(.*?)/,
+          replacement: path.resolve(__dirname, "../packages/api-types/src/$1"),
+        },
       ],
     },
     build: {

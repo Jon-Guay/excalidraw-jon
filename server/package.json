@@ -1,0 +1,28 @@
+{
+  "name": "@excalidraw/server",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "migrate": "tsx src/db/migrate.ts",
+    "seed": "tsx src/db/seed.ts",
+    "db:generate": "drizzle-kit generate"
+  },
+  "dependencies": {
+    "@excalidraw/api-types": "0.0.1",
+    "drizzle-orm": "0.39.3",
+    "express": "4.21.2"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "11.8.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "7.6.12",
+    "@types/express": "4.17.21",
+    "@types/supertest": "6.0.2",
+    "drizzle-kit": "0.30.4",
+    "supertest": "7.0.0",
+    "tsx": "4.19.3"
+  }
+}

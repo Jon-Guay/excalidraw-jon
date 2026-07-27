@@ -1,0 +1,36 @@
+.drawings-list {
+  padding: 0.75rem;
+}
+
+.drawings-list__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.drawings-list__header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.drawings-list__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.drawings-list__items li {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.drawings-list__items button {
+  flex: 1;
+  text-align: left;
+}
+
+.drawings-list__delete {
+  flex: 0 0 auto;
+}

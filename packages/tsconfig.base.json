@@ -24,7 +24,9 @@
       "@excalidraw/utils": ["./utils/src/index.ts"],
       "@excalidraw/utils/*": ["./utils/src/*"],
       "@excalidraw/fractional-indexing": ["./fractional-indexing/src/index.ts"],
-      "@excalidraw/fractional-indexing/*": ["./fractional-indexing/src/*"]
+      "@excalidraw/fractional-indexing/*": ["./fractional-indexing/src/*"],
+      "@excalidraw/api-types": ["./api-types/src/index.ts"],
+      "@excalidraw/api-types/*": ["./api-types/src/*"]
     }
   }
 }

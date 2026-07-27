@@ -70,6 +70,17 @@ export default defineConfig({
         find: /^@excalidraw\/laser-pointer\/(.*?)/,
         replacement: path.resolve(__dirname, "./packages/laser-pointer/src/$1"),
       },
+      {
+        find: /^@excalidraw\/api-types$/,
+        replacement: path.resolve(
+          __dirname,
+          "./packages/api-types/src/index.ts",
+        ),
+      },
+      {
+        find: /^@excalidraw\/api-types\/(.*?)/,
+        replacement: path.resolve(__dirname, "./packages/api-types/src/$1"),
+      },
     ],
   },
   //@ts-ignore
@@ -82,6 +93,7 @@ export default defineConfig({
     setupFiles: ["./setupTests.ts"],
     globals: true,
     environment: "jsdom",
+    environmentMatchGlobs: [["server/**", "node"]],
     // don't list skipped tests in the failure tree — keeps output readable
     hideSkippedTests: true,
     coverage: {
