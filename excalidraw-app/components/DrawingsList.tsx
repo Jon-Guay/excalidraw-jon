@@ -33,7 +33,7 @@ export const DrawingsList = () => {
   }, [refresh]);
 
   const openDrawing = (drawingId: string) => {
-    setActiveDrawingId(drawingId);
+    setActiveDrawingId(null);
     window.history.replaceState({}, "", `#drawing=${drawingId}`);
     window.dispatchEvent(new HashChangeEvent("hashchange"));
   };

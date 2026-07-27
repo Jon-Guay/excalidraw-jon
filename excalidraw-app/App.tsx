@@ -253,12 +253,33 @@ const initializeScene = async (opts: {
     appState: restoreAppState(localDataState?.appState, null),
   };
 
+  if (drawingMatch) {
+    const imported = await getDrawing(drawingMatch[1]);
+    if (imported?.drawing) {
+      const sceneData = imported.drawing.scene as ImportedDataState;
+      scene = {
+        elements: restoreElements(sceneData?.elements, null, {
+          repairBindings: true,
+          deleteInvisibleElements: true,
+        }),
+        appState: restoreAppState(
+          sceneData?.appState,
+          localDataState?.appState,
+        ),
+      };
+      setServerDrawingId(drawingMatch[1]);
+      appJotaiStore.set(activeDrawingIdAtom, drawingMatch[1]);
+      scene.scrollToContent = true;
+      window.history.replaceState({}, APP_NAME, window.location.origin);
+      return { scene, isExternalScene: false };
+    }
+  }
+
   let roomLinkData = getCollaborationLinkData(window.location.href);
   const isExternalScene = !!(
     id ||
     jsonBackendMatch ||
-    roomLinkData ||
-    drawingMatch
+    roomLinkData
   );
   if (isExternalScene) {
     if (
@@ -290,23 +311,6 @@ const initializeScene = async (opts: {
             localDataState?.appState,
           ),
         };
-      } else if (drawingMatch) {
-        const imported = await getDrawing(drawingMatch[1]);
-        if (imported?.drawing) {
-          const sceneData = imported.drawing.scene as ImportedDataState;
-          scene = {
-            elements: restoreElements(sceneData?.elements, null, {
-              repairBindings: true,
-              deleteInvisibleElements: true,
-            }),
-            appState: restoreAppState(
-              sceneData?.appState,
-              localDataState?.appState,
-            ),
-          };
-          setServerDrawingId(drawingMatch[1]);
-          appJotaiStore.set(activeDrawingIdAtom, drawingMatch[1]);
-        }
       }
       scene.scrollToContent = true;
       if (!roomLinkData) {
@@ -394,13 +398,6 @@ const initializeScene = async (opts: {
           isExternalScene,
           id: jsonBackendMatch[1],
           key: jsonBackendMatch[2],
-        }
-      : isExternalScene && drawingMatch
-      ? {
-          scene,
-          isExternalScene,
-          id: drawingMatch[1],
-          key: "",
         }
       : { scene, isExternalScene: false };
   }

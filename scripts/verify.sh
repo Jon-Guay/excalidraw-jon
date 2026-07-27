@@ -201,7 +201,9 @@ gate_migrate() {
   fi
 
   local db_path log first second
-  db_path="$(mktemp /tmp/excalidraw-verify-XXXXXX.db)"
+  db_path="$(mktemp /tmp/excalidraw-verify-XXXXXX)"
+  db_path="${db_path}.db"
+  touch "$db_path"
   log="$(mktemp)"
 
   DB_FILE_NAME="$db_path" "${YARN[@]}" --cwd server migrate >"$log" 2>&1
@@ -278,7 +280,9 @@ gate_api() {
   fi
 
   local db_path
-  db_path="$(mktemp /tmp/excalidraw-api-verify-XXXXXX.db)"
+  db_path="$(mktemp /tmp/excalidraw-api-verify-XXXXXX)"
+  db_path="${db_path}.db"
+  touch "$db_path"
 
   PORT="$port" DB_FILE_NAME="$db_path" "${YARN[@]}" --cwd server start >"$log" 2>&1 </dev/null &
   SERVER_PID=$!
@@ -290,8 +294,6 @@ gate_api() {
   done
 
   stop_api_server
-  rm -f "$db_path" "$log"
-  SERVER_TEST_PORT=""
 
   if [[ "$body" == *'"status":"ok"'* && "$body" == *'"migrationVersion":"0001_init"'* ]]; then
     if [[ -z "$(port_listener_pids "$port")" ]]; then
@@ -303,6 +305,9 @@ gate_api() {
     record api FAIL "GET /health did not return expected body on :${port}"
     tail -20 "$log"
   fi
+
+  rm -f "$db_path" "$log"
+  SERVER_TEST_PORT=""
 }
 
 ALL_GATES=(deps typecheck lint format test boot migrate api)
