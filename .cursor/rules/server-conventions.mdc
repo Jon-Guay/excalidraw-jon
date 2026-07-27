@@ -1,0 +1,13 @@
+---
+description: Server route and database conventions
+globs: server/src/routes/**,server/src/db/**
+alwaysApply: false
+---
+
+New HTTP handlers live in `server/src/routes/*.route.ts` and register through `registerRoutes` in `server/src/routes/index.ts`.
+
+Shared request and response types belong in `@excalidraw/api-types`.
+
+Server tests use a per-file `// @vitest-environment node` docblock.
+
+See `.cursor/skills/server-conventions/SKILL.md` for the endpoint checklist.

@@ -5,7 +5,8 @@
   "workspaces": [
     "excalidraw-app",
     "packages/*",
-    "examples/*"
+    "examples/*",
+    "server"
   ],
   "devDependencies": {
     "@babel/preset-env": "7.26.9",
@@ -58,11 +59,13 @@
     "build:math": "yarn --cwd ./packages/math build:esm",
     "build:fractional-indexing": "yarn --cwd ./packages/fractional-indexing build:esm",
     "build:laser-pointer": "yarn --cwd ./packages/laser-pointer build:esm",
-    "build:packages": "yarn build:common && yarn build:fractional-indexing && yarn build:laser-pointer && yarn build:math && yarn build:element && yarn build:excalidraw",
+    "build:api-types": "yarn --cwd ./packages/api-types build",
+    "build:packages": "yarn build:api-types && yarn build:common && yarn build:fractional-indexing && yarn build:laser-pointer && yarn build:math && yarn build:element && yarn build:excalidraw",
     "build:version": "yarn --cwd ./excalidraw-app build:version",
     "build": "yarn --cwd ./excalidraw-app build",
     "build:preview": "yarn --cwd ./excalidraw-app build:preview",
     "start": "yarn --cwd ./excalidraw-app start",
+    "start:server": "yarn --cwd ./server start",
     "start:production": "yarn --cwd ./excalidraw-app start:production",
     "start:example": "yarn build:packages && yarn --cwd ./examples/with-script-in-browser start",
     "test:all": "yarn test:typecheck && yarn test:code && yarn test:other && yarn test:app --watch=false",

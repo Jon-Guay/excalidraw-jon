@@ -13,6 +13,7 @@ import type { Theme } from "@excalidraw/element/types";
 import { LanguageList } from "../app-language/LanguageList";
 import { isExcalidrawPlusSignedUser } from "../app_constants";
 
+import { UserSwitcher } from "./UserSwitcher";
 import { saveDebugState } from "./DebugCanvas";
 
 export const AppMainMenu: React.FC<{
@@ -80,6 +81,9 @@ export const AppMainMenu: React.FC<{
       <MainMenu.DefaultItems.ToggleTheme allowSystemTheme theme={props.theme} />
       <MainMenu.ItemCustom>
         <LanguageList style={{ width: "100%" }} />
+      </MainMenu.ItemCustom>
+      <MainMenu.ItemCustom>
+        <UserSwitcher style={{ width: "100%" }} />
       </MainMenu.ItemCustom>
       <MainMenu.DefaultItems.ChangeCanvasBackground />
     </MainMenu>

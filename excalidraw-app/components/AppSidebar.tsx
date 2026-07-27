@@ -2,11 +2,13 @@ import { DefaultSidebar, Sidebar, THEME } from "@excalidraw/excalidraw";
 import {
   messageCircleIcon,
   presentationIcon,
+  LibraryIcon,
 } from "@excalidraw/excalidraw/components/icons";
 import { LinkButton } from "@excalidraw/excalidraw/components/LinkButton";
 import { useUIAppState } from "@excalidraw/excalidraw/context/ui-appState";
 
 import "./AppSidebar.scss";
+import { DrawingsList } from "./DrawingsList";
 
 type SidebarPromoCopyProps = {
   text: string;
@@ -83,6 +85,12 @@ export const AppSidebar = () => {
         >
           {presentationIcon}
         </Sidebar.TabTrigger>
+        <Sidebar.TabTrigger
+          tab="drawings"
+          style={{ opacity: openSidebar?.tab === "drawings" ? 1 : 0.4 }}
+        >
+          {LibraryIcon}
+        </Sidebar.TabTrigger>
       </DefaultSidebar.TabTriggers>
       <Sidebar.Tab tab="comments">
         <div className="app-sidebar-promo-container">
@@ -125,6 +133,9 @@ export const AppSidebar = () => {
             Sign up now
           </LinkButton>
         </div>
+      </Sidebar.Tab>
+      <Sidebar.Tab tab="drawings" className="px-3">
+        <DrawingsList />
       </Sidebar.Tab>
     </DefaultSidebar>
   );

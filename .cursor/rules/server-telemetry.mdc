@@ -1,0 +1,11 @@
+---
+description: Server telemetry invariants for route handlers and spans
+globs: server/src/**/*.ts
+alwaysApply: false
+---
+
+Every route handler wraps work in `withApiSpan` from `server/src/telemetry/withApiSpan.ts`.
+
+Use attribute keys prescribed in `.cursor/skills/server-telemetry/SKILL.md`. Do not log PII or high-cardinality attributes.
+
+See `.cursor/skills/server-telemetry/SKILL.md` for examples and call shape.

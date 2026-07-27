@@ -62,6 +62,7 @@ import {
 } from "@excalidraw/excalidraw/data/library";
 
 import type { RemoteExcalidrawElement } from "@excalidraw/excalidraw/data/reconcile";
+import type { ImportedDataState } from "@excalidraw/excalidraw/data/types";
 import type { RestoredDataState } from "@excalidraw/excalidraw/data/restore";
 import type {
   FileId,
@@ -129,6 +130,12 @@ import {
   localStorageQuotaExceededAtom,
 } from "./data/LocalData";
 import { isBrowserStorageStateNewer } from "./data/tabSync";
+import { activeDrawingIdAtom } from "./data/currentUser";
+import { getDrawing } from "./data/serverApi";
+import {
+  queueServerDrawingSave,
+  setServerDrawingId,
+} from "./data/serverDrawingSave";
 import { ShareDialog, shareDialogStateAtom } from "./share/ShareDialog";
 import CollabError, { collabErrorIndicatorAtom } from "./collab/CollabError";
 import { useHandleAppTheme } from "./useHandleAppTheme";
@@ -227,6 +234,7 @@ const initializeScene = async (opts: {
     /^#json=([a-zA-Z0-9_-]+),([a-zA-Z0-9_-]+)$/,
   );
   const externalUrlMatch = window.location.hash.match(/^#url=(.*)$/);
+  const drawingMatch = window.location.hash.match(/^#drawing=([a-zA-Z0-9-]+)$/);
 
   const localDataState = importFromLocalStorage();
 
@@ -246,7 +254,12 @@ const initializeScene = async (opts: {
   };
 
   let roomLinkData = getCollaborationLinkData(window.location.href);
-  const isExternalScene = !!(id || jsonBackendMatch || roomLinkData);
+  const isExternalScene = !!(
+    id ||
+    jsonBackendMatch ||
+    roomLinkData ||
+    drawingMatch
+  );
   if (isExternalScene) {
     if (
       // don't prompt if scene is empty
@@ -277,6 +290,23 @@ const initializeScene = async (opts: {
             localDataState?.appState,
           ),
         };
+      } else if (drawingMatch) {
+        const imported = await getDrawing(drawingMatch[1]);
+        if (imported?.drawing) {
+          const sceneData = imported.drawing.scene as ImportedDataState;
+          scene = {
+            elements: restoreElements(sceneData?.elements, null, {
+              repairBindings: true,
+              deleteInvisibleElements: true,
+            }),
+            appState: restoreAppState(
+              sceneData?.appState,
+              localDataState?.appState,
+            ),
+          };
+          setServerDrawingId(drawingMatch[1]);
+          appJotaiStore.set(activeDrawingIdAtom, drawingMatch[1]);
+        }
       }
       scene.scrollToContent = true;
       if (!roomLinkData) {
@@ -365,6 +395,13 @@ const initializeScene = async (opts: {
           id: jsonBackendMatch[1],
           key: jsonBackendMatch[2],
         }
+      : isExternalScene && drawingMatch
+      ? {
+          scene,
+          isExternalScene,
+          id: drawingMatch[1],
+          key: "",
+        }
       : { scene, isExternalScene: false };
   }
   return { scene: null, isExternalScene: false };
@@ -372,6 +409,7 @@ const initializeScene = async (opts: {
 
 const ExcalidrawWrapper = () => {
   const excalidrawAPI = useExcalidrawAPI();
+  const activeDrawingId = useAtomValue(activeDrawingIdAtom);
 
   const [errorMessage, setErrorMessage] = useState("");
   const isCollabDisabled = isRunningInIframe();
@@ -394,6 +432,10 @@ const ExcalidrawWrapper = () => {
   }
 
   const debugCanvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    setServerDrawingId(activeDrawingId);
+  }, [activeDrawingId]);
 
   useEffect(() => {
     trackEvent("load", "frame", getFrame());
@@ -714,6 +756,8 @@ const ExcalidrawWrapper = () => {
         }
       });
     }
+
+    queueServerDrawingSave(elements, appState, files);
 
     // Render the debug scene if the debug canvas is available
     if (debugCanvasRef.current && excalidrawAPI) {
