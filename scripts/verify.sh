@@ -200,24 +200,24 @@ gate_migrate() {
     return
   fi
 
-  local db_path log first second
-  db_path="$(mktemp /tmp/excalidraw-verify-XXXXXX)"
-  db_path="${db_path}.db"
-  touch "$db_path"
+  local tmpdir db_path log first second
+  tmpdir="$(mktemp -d /tmp/excalidraw-verify-XXXXXX)"
+  db_path="${tmpdir}/verify.db"
   log="$(mktemp)"
 
   DB_FILE_NAME="$db_path" "${YARN[@]}" --cwd server migrate >"$log" 2>&1
   if [[ $? -ne 0 ]]; then
     record migrate FAIL "first migration run failed, see below"
     tail -40 "$log"
-    rm -f "$log" "$db_path"
+    rm -rf "$log" "$tmpdir"
     return
   fi
 
   first="$(DB_FILE_NAME="$db_path" "${YARN[@]}" --cwd server migrate 2>>"$log")"
   second="$(DB_FILE_NAME="$db_path" "${YARN[@]}" --cwd server migrate 2>>"$log")"
 
-  rm -f "$log" "$db_path"
+  rm -f "$log"
+  rm -rf "$tmpdir"
 
   if [[ "$first" == *"0001_init"* && "$second" == *"0001_init"* ]]; then
     record migrate PASS "migrations idempotent on throwaway db"
@@ -279,10 +279,9 @@ gate_api() {
     return
   fi
 
-  local db_path
-  db_path="$(mktemp /tmp/excalidraw-api-verify-XXXXXX)"
-  db_path="${db_path}.db"
-  touch "$db_path"
+  local tmpdir db_path
+  tmpdir="$(mktemp -d /tmp/excalidraw-api-verify-XXXXXX)"
+  db_path="${tmpdir}/verify.db"
 
   PORT="$port" DB_FILE_NAME="$db_path" "${YARN[@]}" --cwd server start >"$log" 2>&1 </dev/null &
   SERVER_PID=$!
@@ -306,7 +305,8 @@ gate_api() {
     tail -20 "$log"
   fi
 
-  rm -f "$db_path" "$log"
+  rm -rf "$tmpdir"
+  rm -f "$log"
   SERVER_TEST_PORT=""
 }
 

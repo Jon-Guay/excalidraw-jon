@@ -135,6 +135,7 @@ import { getDrawing } from "./data/serverApi";
 import {
   queueServerDrawingSave,
   setServerDrawingId,
+  setServerDrawingSavePaused,
 } from "./data/serverDrawingSave";
 import { ShareDialog, shareDialogStateAtom } from "./share/ShareDialog";
 import CollabError, { collabErrorIndicatorAtom } from "./collab/CollabError";
@@ -273,14 +274,12 @@ const initializeScene = async (opts: {
       window.history.replaceState({}, APP_NAME, window.location.origin);
       return { scene, isExternalScene: false };
     }
+    setServerDrawingSavePaused(false);
+    window.history.replaceState({}, APP_NAME, window.location.origin);
   }
 
   let roomLinkData = getCollaborationLinkData(window.location.href);
-  const isExternalScene = !!(
-    id ||
-    jsonBackendMatch ||
-    roomLinkData
-  );
+  const isExternalScene = !!(id || jsonBackendMatch || roomLinkData);
   if (isExternalScene) {
     if (
       // don't prompt if scene is empty
@@ -580,18 +579,22 @@ const ExcalidrawWrapper = () => {
         }
         excalidrawAPI.updateScene({ appState: { isLoading: true } });
 
-        initializeScene({ collabAPI, excalidrawAPI }).then((data) => {
-          loadImages(data);
-          if (data.scene) {
-            excalidrawAPI.updateScene({
-              elements: restoreElements(data.scene.elements, null, {
-                repairBindings: true,
-              }),
-              appState: restoreAppState(data.scene.appState, null),
-              captureUpdate: CaptureUpdateAction.IMMEDIATELY,
-            });
-          }
-        });
+        initializeScene({ collabAPI, excalidrawAPI })
+          .then((data) => {
+            loadImages(data);
+            if (data.scene) {
+              excalidrawAPI.updateScene({
+                elements: restoreElements(data.scene.elements, null, {
+                  repairBindings: true,
+                }),
+                appState: restoreAppState(data.scene.appState, null),
+                captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+              });
+            }
+          })
+          .finally(() => {
+            setServerDrawingSavePaused(false);
+          });
       }
     };
 

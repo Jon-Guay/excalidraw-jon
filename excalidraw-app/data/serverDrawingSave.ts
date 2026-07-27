@@ -7,9 +7,14 @@ import { SAVE_TO_LOCAL_STORAGE_TIMEOUT } from "../app_constants";
 import { updateDrawing } from "./serverApi";
 
 let activeDrawingId: string | null = null;
+let savePaused = false;
 
 export const setServerDrawingId = (drawingId: string | null) => {
   activeDrawingId = drawingId;
+};
+
+export const setServerDrawingSavePaused = (paused: boolean) => {
+  savePaused = paused;
 };
 
 const saveDrawingToServer = throttle(
@@ -32,7 +37,7 @@ export const queueServerDrawingSave = (
   appState: Parameters<typeof serializeAsJSON>[1],
   files: Parameters<typeof serializeAsJSON>[2],
 ) => {
-  if (!activeDrawingId) {
+  if (!activeDrawingId || savePaused) {
     return;
   }
   saveDrawingToServer(activeDrawingId, elements, appState, files);

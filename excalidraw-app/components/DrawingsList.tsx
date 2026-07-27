@@ -1,19 +1,19 @@
 import React, { useCallback, useEffect, useState } from "react";
 
-import { useAtomValue, useSetAtom } from "../app-jotai";
-import { activeDrawingIdAtom, currentUserIdAtom } from "../data/currentUser";
+import { useAtomValue } from "../app-jotai";
+import { currentUserIdAtom } from "../data/currentUser";
 import {
   createDrawing,
   deleteDrawing,
   listDrawings,
   type Drawing,
 } from "../data/serverApi";
+import { setServerDrawingSavePaused } from "../data/serverDrawingSave";
 
 import "./DrawingsList.scss";
 
 export const DrawingsList = () => {
   const currentUserId = useAtomValue(currentUserIdAtom);
-  const setActiveDrawingId = useSetAtom(activeDrawingIdAtom);
   const [drawings, setDrawings] = useState<Drawing[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -33,7 +33,7 @@ export const DrawingsList = () => {
   }, [refresh]);
 
   const openDrawing = (drawingId: string) => {
-    setActiveDrawingId(null);
+    setServerDrawingSavePaused(true);
     window.history.replaceState({}, "", `#drawing=${drawingId}`);
     window.dispatchEvent(new HashChangeEvent("hashchange"));
   };
