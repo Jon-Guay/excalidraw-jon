@@ -1,7 +1,5 @@
 import { createRequire } from "node:module";
 
-import { DatabaseSync, type StatementSync } from "node:sqlite";
-
 import { drizzle as drizzleBetter } from "drizzle-orm/better-sqlite3";
 
 import { migrationMeta } from "./migrationMeta.js";
@@ -12,6 +10,17 @@ const require = createRequire(import.meta.url);
 const schema = { ...domainSchema, migrationMeta };
 
 type SqlValue = string | number | bigint | null | Uint8Array;
+
+type NodeStatementSync = {
+  run: (...params: SqlValue[]) => unknown;
+  get: (...params: SqlValue[]) => unknown;
+  all: (...params: SqlValue[]) => unknown[];
+};
+
+type NodeDatabaseSync = {
+  exec: (sql: string) => void;
+  prepare: (sql: string) => NodeStatementSync;
+};
 
 type PreparedStatement = {
   run: (...params: SqlValue[]) => unknown;
@@ -33,7 +42,7 @@ export type SqliteClient = {
 };
 
 class NodeStatement implements PreparedStatement {
-  constructor(private readonly stmt: StatementSync) {}
+  constructor(private readonly stmt: NodeStatementSync) {}
 
   run(...params: SqlValue[]) {
     return this.stmt.run(...params);
@@ -69,7 +78,7 @@ class NodeStatement implements PreparedStatement {
 }
 
 class NodeDatabase implements SqliteClient {
-  constructor(private readonly db: DatabaseSync) {}
+  constructor(private readonly db: NodeDatabaseSync) {}
 
   exec(sql: string) {
     this.db.exec(sql);
@@ -110,11 +119,17 @@ export const openSqlite = (filePath: string): SqliteClient => {
     db.pragma("journal_mode = WAL");
     db.pragma("foreign_keys = ON");
     return db as unknown as SqliteClient;
-  } catch {
-    const db = new DatabaseSync(filePath);
-    db.exec("PRAGMA journal_mode = WAL");
-    db.exec("PRAGMA foreign_keys = ON");
-    return new NodeDatabase(db);
+  } catch (betterSqliteError) {
+    try {
+      const { DatabaseSync } =
+        require("node:sqlite") as typeof import("node:sqlite");
+      const db = new DatabaseSync(filePath);
+      db.exec("PRAGMA journal_mode = WAL");
+      db.exec("PRAGMA foreign_keys = ON");
+      return new NodeDatabase(db);
+    } catch {
+      throw betterSqliteError;
+    }
   }
 };
 
