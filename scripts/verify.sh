@@ -229,19 +229,38 @@ gate_migrate() {
 SERVER_PID=""
 SERVER_TEST_PORT=""
 
+# Reclaims a throwaway port after the api gate. Call only for ports this script
+# just bound; anything still listening after teardown is from our own run.
+force_free_port() {
+  local port="$1" pids pid
+  for _ in $(seq 1 15); do
+    pids="$(port_listener_pids "$port")"
+    [[ -z "$pids" ]] && return 0
+    for pid in $pids; do
+      kill -9 "$pid" 2>/dev/null
+    done
+    sleep 1
+  done
+  [[ -z "$(port_listener_pids "$port")" ]]
+}
+
 stop_api_server() {
   if [[ -n "$SERVER_PID" ]]; then
+    pkill -TERM -P "$SERVER_PID" 2>/dev/null
     kill -TERM "$SERVER_PID" 2>/dev/null
+    sleep 1
+    pkill -KILL -P "$SERVER_PID" 2>/dev/null
+    kill -KILL "$SERVER_PID" 2>/dev/null
     SERVER_PID=""
   fi
-  [[ -n "$SERVER_TEST_PORT" ]] && free_api_port "$SERVER_TEST_PORT" >/dev/null 2>&1
+  [[ -n "$SERVER_TEST_PORT" ]] && force_free_port "$SERVER_TEST_PORT" >/dev/null 2>&1
   return 0
 }
 
 is_our_api_server() {
   local pid="$1" argv
-  argv="$(ps -o command= -p "$pid" 2>/dev/null)"
-  [[ "$argv" == *server/src/index.ts* || "$argv" == *"tsx src/index.ts"* ]]
+  argv="$(ps -o args= -p "$pid" 2>/dev/null)"
+  [[ "$argv" == *server/src/index.ts* || "$argv" == *src/index.ts* ]]
 }
 
 free_api_port() {
