@@ -234,14 +234,14 @@ stop_api_server() {
     kill -TERM "$SERVER_PID" 2>/dev/null
     SERVER_PID=""
   fi
-  [[ -n "$SERVER_TEST_PORT" ]] && free_port "$SERVER_TEST_PORT" >/dev/null 2>&1
+  [[ -n "$SERVER_TEST_PORT" ]] && free_api_port "$SERVER_TEST_PORT" >/dev/null 2>&1
   return 0
 }
 
 is_our_api_server() {
   local pid="$1" argv
   argv="$(ps -o command= -p "$pid" 2>/dev/null)"
-  [[ "$argv" == *server/src/index.ts* || "$argv" == *tsx*server* ]]
+  [[ "$argv" == *server/src/index.ts* || "$argv" == *"tsx src/index.ts"* ]]
 }
 
 free_api_port() {
