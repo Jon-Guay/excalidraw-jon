@@ -1,3 +1,8 @@
+---
+name: server-telemetry
+description: Instrument drawings API route handlers with spans and the required attribute keys. Use when adding or changing any handler under server/src, or when deciding what may and may not be attached to a span.
+---
+
 # Server telemetry
 
 ## Tracer

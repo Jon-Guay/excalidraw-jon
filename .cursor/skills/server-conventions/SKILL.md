@@ -1,3 +1,8 @@
+---
+name: server-conventions
+description: Add or change a drawings API endpoint — route module shape, router registration, the route module registry, shared request and response types, and server test setup. Use when touching server/src/routes or packages/api-types.
+---
+
 # Server conventions
 
 ## Adding an endpoint
