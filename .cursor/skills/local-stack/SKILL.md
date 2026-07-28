@@ -1,11 +1,11 @@
 ---
-name: showcase-startup
-description: Bring this Excalidraw fork to a ready-to-showcase state by installing deps, starting the API and Vite app, seeding users, and verifying the drawings UI. Use when the user asks to start the demo, prepare a showcase, get the repo running, boot Alice/Bob/Carol, or fix a missing user switcher.
+name: local-stack
+description: Install dependencies, start the drawings API and Vite app, seed users, and verify the Drawings UI. Use when the user asks to get the repo running locally, start the API, boot Alice/Bob/Carol, or fix a missing persona switcher.
 ---
 
-# Showcase startup
+# Local stack startup
 
-Put the local stack in a state you can demo: Excalidraw UI + drawings API + seeded users.
+Bring up the local Excalidraw UI, drawings API, and seeded users.
 
 ## Target state
 
@@ -36,13 +36,13 @@ Below, `yarn …` means whichever invocation works in the current shell.
 Copy and track:
 
 ```
-Showcase startup:
+Local stack startup:
 - [ ] Node ready (see Node section)
 - [ ] Dependencies installed
 - [ ] API healthy on :3003
 - [ ] App serving on :3001
 - [ ] Users list returns Alice/Bob/Carol
-- [ ] UI smoke: hamburger user switcher + Drawings sidebar tab
+- [ ] UI smoke: persona switcher + Drawings sidebar tab
 ```
 
 ### 1. Node and install
@@ -54,8 +54,8 @@ yarn install
 
 **Node versions (verified):**
 
-- Local showcase startup works on **Node 26** (API boot + `/health` + `/users`).
-- Repo CI pin remains **Node 20** via `.nvmrc`. Prefer 20 when matching CI; Node 26 is fine for local demos.
+- Local startup works on **Node 26** (API boot + `/health` + `/users`).
+- Repo CI pin remains **Node 20** via `.nvmrc`. Prefer 20 when matching CI; Node 26 is fine for local development.
 - If `better-sqlite3` fails to compile, the server falls back to `node:sqlite` on newer Node. Stay on 20 only when you need native-module / CI parity.
 
 ### 2. Start API (required first)
@@ -105,12 +105,12 @@ yarn start:server   # migrates + reseeds Alice/Bob/Carol
 
 Optional full verify (slow): `./scripts/verify.sh`.
 
-## Demo talk track (one sentence)
+## What this stack is
 
-This fork adds a local Express/SQLite drawings API to Excalidraw so Cursor can ship full-stack changes (route, shared types, test) against a real product surface.
+This fork adds a local Express/SQLite drawings API to Excalidraw so full-stack changes (route, shared types, test) can land against a real product surface.
 
 ## Do not
 
-- Demo without `yarn start:server` — UI looks like stock Excalidraw with no users/drawings.
-- Expect Firebase/collab room to be in-repo; only the drawings/users tier is local.
-- Commit `server/data/excalidraw.db` or customer-specific demo branches onto `master`.
+- Run the app without `yarn start:server` — the UI looks like stock Excalidraw with no users or drawings.
+- Expect Firebase or the collab room server to be in-repo; only the drawings/users tier is local.
+- Commit `server/data/excalidraw.db` or long-lived feature branches onto `master`.
