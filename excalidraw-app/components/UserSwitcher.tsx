@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import type { User } from "@excalidraw/api-types";
 
 import { useAtom, useSetAtom } from "../app-jotai";
-import { listUsers } from "../data/serverApi";
+import { isServerConfigured, listUsers } from "../data/serverApi";
 import {
   activeDrawingIdAtom,
   currentUserIdAtom,
@@ -14,13 +14,22 @@ export const UserSwitcher = ({ style }: { style?: React.CSSProperties }) => {
   const [currentUserId, setCurrentUserId] = useAtom(currentUserIdAtom);
   const setActiveDrawingId = useSetAtom(activeDrawingIdAtom);
   const [users, setUsers] = useState<User[]>([]);
+  const [loadState, setLoadState] = useState<"idle" | "loading" | "error">(
+    "idle",
+  );
 
   useEffect(() => {
+    if (!isServerConfigured()) {
+      return;
+    }
+    setLoadState("loading");
     listUsers().then((response) => {
       if (!response?.users.length) {
+        setLoadState("error");
         return;
       }
       setUsers(response.users);
+      setLoadState("idle");
       if (!currentUserId) {
         setCurrentUserId(response.users[0].id);
         persistCurrentUserId(response.users[0].id);
@@ -28,27 +37,47 @@ export const UserSwitcher = ({ style }: { style?: React.CSSProperties }) => {
     });
   }, [currentUserId, setCurrentUserId]);
 
-  if (!users.length) {
+  if (!isServerConfigured()) {
     return null;
   }
 
   return (
-    <select
-      className="dropdown-select"
-      style={style}
-      value={currentUserId}
-      aria-label="Current user"
-      onChange={({ target }) => {
-        setCurrentUserId(target.value);
-        persistCurrentUserId(target.value);
-        setActiveDrawingId(null);
+    <label
+      className="user-switcher"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "0.25rem",
+        width: "100%",
+        ...style,
       }}
     >
-      {users.map((user) => (
-        <option key={user.id} value={user.id}>
-          {user.name}
-        </option>
-      ))}
-    </select>
+      <span style={{ fontSize: "0.75rem", fontWeight: 600 }}>Persona</span>
+      {users.length ? (
+        <select
+          className="dropdown-select"
+          style={{ width: "100%" }}
+          value={currentUserId || users[0].id}
+          aria-label="Current user"
+          onChange={({ target }) => {
+            setCurrentUserId(target.value);
+            persistCurrentUserId(target.value);
+            setActiveDrawingId(null);
+          }}
+        >
+          {users.map((user) => (
+            <option key={user.id} value={user.id}>
+              {user.name}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <span style={{ fontSize: "0.8rem" }}>
+          {loadState === "error"
+            ? "Users unavailable — is the API running on :3003?"
+            : "Loading personas…"}
+        </span>
+      )}
+    </label>
   );
 };

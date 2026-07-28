@@ -10,6 +10,8 @@ import {
 } from "../data/serverApi";
 import { setServerDrawingSavePaused } from "../data/serverDrawingSave";
 
+import { UserSwitcher } from "./UserSwitcher";
+
 import "./DrawingsList.scss";
 
 export const DrawingsList = () => {
@@ -57,39 +59,40 @@ export const DrawingsList = () => {
     await refresh();
   };
 
-  if (!currentUserId) {
-    return (
-      <div className="drawings-list">
-        <p>Select a user from the menu to load server drawings.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="drawings-list">
-      <div className="drawings-list__header">
-        <h3>Drawings</h3>
-        <button type="button" onClick={handleCreate}>
-          New
-        </button>
+      <div className="drawings-list__persona">
+        <UserSwitcher />
       </div>
-      {loading ? <p>Loading…</p> : null}
-      <ul className="drawings-list__items">
-        {drawings.map((drawing) => (
-          <li key={drawing.id}>
-            <button type="button" onClick={() => openDrawing(drawing.id)}>
-              {drawing.title}
+      {!currentUserId ? (
+        <p>Select a persona above to load server drawings.</p>
+      ) : (
+        <>
+          <div className="drawings-list__header">
+            <h3>Drawings</h3>
+            <button type="button" onClick={handleCreate}>
+              New
             </button>
-            <button
-              type="button"
-              className="drawings-list__delete"
-              onClick={() => handleDelete(drawing.id)}
-            >
-              Delete
-            </button>
-          </li>
-        ))}
-      </ul>
+          </div>
+          {loading ? <p>Loading…</p> : null}
+          <ul className="drawings-list__items">
+            {drawings.map((drawing) => (
+              <li key={drawing.id}>
+                <button type="button" onClick={() => openDrawing(drawing.id)}>
+                  {drawing.title}
+                </button>
+                <button
+                  type="button"
+                  className="drawings-list__delete"
+                  onClick={() => handleDelete(drawing.id)}
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   );
 };
