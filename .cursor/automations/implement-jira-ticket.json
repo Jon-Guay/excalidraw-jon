@@ -1,0 +1,27 @@
+{
+  "name": "Implement Jira ticket on In Progress",
+  "description": "When a Jira webhook fires, launch a cloud agent on excalidraw-jon master to explore, plan, critique, implement the ticket, and open a pull request.",
+  "workflow": {
+    "triggers": [
+      {
+        "webhook": {}
+      }
+    ],
+    "gitConfig": {
+      "repo": "Jon-Guay/excalidraw-jon",
+      "branch": "master"
+    },
+    "prompts": [
+      "You are implementing a Jira ticket for the excalidraw-jon repository.\n\n## Ticket\nRead the issue key, summary, and description from the webhook payload.\n\n## Workflow\n1. Task explore subagent (readonly): map relevant files in the server workspace, packages/api-types, and excalidraw-app when the ticket requires UI changes.\n2. Task plan-subagent: draft an implementation plan following repository conventions.\n3. Task critique-plan-subagent: review the plan and reject convention violations before any code is written.\n4. Implement the feature per the approved plan.\n5. Run ./scripts/verify.sh and fix any failures.\n6. Open a pull request with a conventional commit title. Do not merge or deploy.\n\n## Conventions\nBefore editing server code, read .cursor/skills/server-conventions/SKILL.md and .cursor/skills/server-telemetry/SKILL.md.\n\n## Terminus\nOpen the pull request and stop."
+    ],
+    "actions": [],
+    "agentOptions": {
+      "skipInstall": false
+    },
+    "memoryEnabled": false
+  },
+  "_setupNotes": {
+    "jiraWebhook": "After saving this automation in the Cursor Automations editor, copy the webhook URL and API key. In Jira (JONS project), create an automation rule: trigger on issue transition to In Progress, action send web request POST to the Cursor webhook URL with Authorization header and a JSON body containing issue.key, issue.fields.summary, and issue.fields.description.",
+    "repoPush": "Push master to origin before the first run so the cloud agent sees committed .cursor/ primitives."
+  }
+}
