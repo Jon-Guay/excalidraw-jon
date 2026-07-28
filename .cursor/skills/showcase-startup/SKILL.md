@@ -9,10 +9,10 @@ Put the local stack in a state you can demo: Excalidraw UI + drawings API + seed
 
 ## Target state
 
-| Service | Command | URL |
-| --- | --- | --- |
-| API | `yarn start:server` | `http://localhost:3003` |
-| App | `yarn start` | `http://localhost:3001` |
+| Service | Command             | URL                     |
+| ------- | ------------------- | ----------------------- |
+| API     | `yarn start:server` | `http://localhost:3003` |
+| App     | `yarn start`        | `http://localhost:3001` |
 
 - `VITE_APP_SERVER_URL` must be `http://localhost:3003` (set in `.env.development`).
 - Seeded users: Alice, Bob, Carol (`user-alice`, `user-bob`, `user-carol`).

@@ -5,6 +5,7 @@ import { currentUserIdAtom } from "../data/currentUser";
 import {
   createDrawing,
   deleteDrawing,
+  isServerConfigured,
   listDrawings,
   type Drawing,
 } from "../data/serverApi";
@@ -18,6 +19,7 @@ export const DrawingsList = () => {
   const currentUserId = useAtomValue(currentUserIdAtom);
   const [drawings, setDrawings] = useState<Drawing[]>([]);
   const [loading, setLoading] = useState(false);
+  const serverConfigured = isServerConfigured();
 
   const refresh = useCallback(async () => {
     if (!currentUserId) {
@@ -64,9 +66,9 @@ export const DrawingsList = () => {
       <div className="drawings-list__persona">
         <UserSwitcher />
       </div>
-      {!currentUserId ? (
-        <p>Select a persona above to load server drawings.</p>
-      ) : (
+      {!serverConfigured ? (
+        <p>Server drawings require VITE_APP_SERVER_URL.</p>
+      ) : !currentUserId ? null : (
         <>
           <div className="drawings-list__header">
             <h3>Drawings</h3>
