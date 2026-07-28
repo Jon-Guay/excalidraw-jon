@@ -16,7 +16,7 @@ There is no HTTP server, no database, no schema, no migration, and no server-sid
 
 The goal is a server tier that owns a real domain, so that work touching a migration, a schema, a route, a shared type, a client call, and a test is possible in this repository.
 
-This repository is also the substrate for a Cursor primitives showcase documented in `cursor-primitives-showcase-plan.md`. The server tier is not the finale. It is the stage: a working backend with routes, migrations, shared types, tests, and committed Cursor rules and skills that a cloud agent can extend when a new Jira ticket arrives. Phases 0 through 3 build that stage. The star feature lands later, as a small ticket against an already-green tree.
+The server tier is a foundation, not a finished product. Phases 0 through 3 build a working backend with routes, migrations, shared types, tests, and committed Cursor rules and skills, so that later feature work — including work an agent picks up from a ticket — lands against an already-green tree.
 
 ## Non-goals
 
@@ -27,10 +27,10 @@ These are deliberately excluded. Each was considered and cut.
 - **Replacing Firebase.** Migration work with no new capability at the end of it.
 - **Replacing the collaboration socket server.** Live collaboration already works against the external room server. Owning it changes nothing above it.
 - **Microservices, queues, caching, and rate limiting.** Nothing speculative. Add these when a specific change needs them.
-- **Full observability infrastructure.** Collectors, span exporters, Jaeger, in-memory recorders, and span-assertion test harnesses are out of scope. What stays in is narrow: a tracer initialised once, one distinctively named span helper, and instrumentation on existing routes so a glob-scoped rule and skill have a fingerprint to match.
+- **Full observability infrastructure.** Collectors, span exporters, Jaeger, in-memory recorders, and span-assertion test harnesses are out of scope. What stays in is narrow: a tracer initialised once, one shared span helper, and instrumentation on existing routes so the telemetry rule and skill describe a convention that already exists in the code.
 - **Modelling Excalidraw elements in the database.** See "Elements stay opaque" below.
-- **Showcase runtime artifacts.** Automations, Jira webhooks, cloud agent runs, and Bugbot sessions belong to `cursor-primitives-showcase-plan.md`, not here.
-- **Auto-merge, production deploy, or release from automation.** Every change, including future showcase runs, terminates at an open PR.
+- **Automation infrastructure beyond `verify.yml`.** Webhooks, scheduled jobs, and deployment pipelines are configured outside this repository.
+- **Auto-merge, production deploy, or release from automation.** Every change, including agent-driven ones, terminates at an open PR.
 
 ## Constraints discovered in the codebase
 
@@ -48,17 +48,17 @@ These are deliberately excluded. Each was considered and cut.
 
 **`scripts/release.js` publishes an explicit allowlist**, not a glob over `packages/*`. New packages are not published unless added to `PACKAGES`. Mark them `"private": true` anyway.
 
-**No `.cursor/` layer exists yet.** There are no rules, skills, or agents in this repository, and there is no `mobile/` directory. The showcase's "repo analogs to reuse" table points at other repositories. Primitives here must be authored from scratch and committed before any automation-launched cloud agent can see them.
+**No `.cursor/` layer exists yet.** There are no rules, skills, or agents in this repository, and no in-repo pattern to mirror. Rules and skills must be authored from scratch and committed before any cloud agent can see them.
 
-**Cloud agents check out a remote ref.** Uncommitted rules and skills are invisible to automation. Substrate work lands on a named branch, is pushed to `origin`, and is what the showcase automation targets.
+**Cloud agents check out a remote ref.** Uncommitted rules and skills are invisible to automation. Substrate work lands on a named branch, is pushed to `origin`, and is what an automation targets.
 
-**CI on this fork does not mirror local verification.** `test.yml` runs on push to `master` only. Pull requests trigger `lint.yml`, `semantic-pr-title.yml`, `size-limit.yml`, and `test-coverage-pr.yml` inherited from upstream Excalidraw. None of them run `./scripts/verify.sh`. A showcase PR whose title is not a conventional commit fails `semantic-pr-title` even when the code is fine.
+**CI on this fork does not mirror local verification.** `test.yml` runs on push to `master` only. Pull requests trigger `lint.yml`, `semantic-pr-title.yml`, `size-limit.yml`, and `test-coverage-pr.yml` inherited from upstream Excalidraw. None of them run `./scripts/verify.sh`. A PR whose title is not a conventional commit fails `semantic-pr-title` even when the code is fine.
 
 **Native SQLite drivers and Node version spread.** `better-sqlite3` compiles via node-gyp on every fresh VM. There is no `.nvmrc`; `engines` says `>=18`, CI uses Node 20, the Dockerfile uses Node 24, and local development may run newer. Node 26 ships a built-in `node:sqlite` module that avoids the compile step. Pick one driver and pin one Node version before Phase 0 closes.
 
 ## Shape
 
-Two new workspace members, one fixed server layout, and a Cursor primitives tree. Paths are stable so rule globs can be written once and verified against edited files.
+Two new workspace members, one fixed server layout, and a `.cursor/` tree. Paths are stable so rule globs can be written once and stay correct.
 
 ```
 server/
@@ -77,7 +77,7 @@ server/
       seed.ts                idempotent seed
     telemetry/
       tracer.ts                one-time tracer init
-      withApiSpan.ts           distinctive span helper (showcase fingerprint)
+      withApiSpan.ts           shared span helper used by every handler
     middleware/
       errorHandler.ts
 packages/api-types/
@@ -100,9 +100,9 @@ packages/api-types/
 
 `packages/api-types` covers the new domain only. Drawings, users, and whatever later work introduces. It does not describe elements. A scene crosses the wire as opaque JSON.
 
-**Route registration is the loud fingerprint.** Handlers live in `server/src/routes/*.route.ts`. Every new endpoint is wired through `registerRoutes` in `server/src/routes/index.ts`. A showcase feature diff must show both the handler file and a line added to that registry. Bare `app.get(...)` calls elsewhere are out of convention.
+**Route registration is the single wiring path.** Handlers live in `server/src/routes/*.route.ts`. Every new endpoint is wired through `registerRoutes` in `server/src/routes/index.ts`, so a feature diff shows both the handler file and a line added to that registry. Bare `app.get(...)` calls elsewhere are out of convention.
 
-**Telemetry fingerprint.** All route handlers wrap work in `withApiSpan(name, attrs, fn)` from `server/src/telemetry/withApiSpan.ts`. The skill prescribes the helper name, attribute keys, and call shape so a one-screen diff is unmistakable.
+**Telemetry convention.** All route handlers wrap work in `withApiSpan(name, attrs, fn)` from `server/src/telemetry/withApiSpan.ts`. The skill prescribes the helper name, attribute keys, and call shape so handlers stay consistent with one another.
 
 ## Phase 0. Scaffold
 
@@ -128,8 +128,8 @@ Everything later depends on this, so it lands first and lands green.
    - `api`, booting the service and asserting `GET /health` returns 200 with the expected body, torn down the same way the `boot` gate tears down vite. Confirm `lsof` is available in CI or provide a port-reclaim fallback; the gate must fail loudly, not pass by probing a leaked process.
 5. Cloud runnability and CI:
    - `.nvmrc` pinned to `20` to match `.github/workflows/test.yml`. Treat this as a cloud-runnability requirement, not hygiene alone.
-   - `.github/workflows/verify.yml` on `pull_request`, running `./scripts/verify.sh`. This is the deterministic backstop the showcase mentions.
-   - Inherited upstream PR workflows: keep `lint.yml`. Remove or disable `semantic-pr-title.yml`, `size-limit.yml`, and `test-coverage-pr.yml` on this fork — they encode upstream Excalidraw release policy, not substrate correctness. Document the automation prompt constraint separately: future showcase PRs should still use conventional commit titles as a courtesy even without the gate.
+   - `.github/workflows/verify.yml` on `pull_request`, running `./scripts/verify.sh`. Rules and skills guide; this is the deterministic backstop that enforces.
+   - Inherited upstream PR workflows: keep `lint.yml`. Remove or disable `semantic-pr-title.yml`, `size-limit.yml`, and `test-coverage-pr.yml` on this fork — they encode upstream Excalidraw release policy, not substrate correctness. Document the constraint separately: future PRs should still use conventional commit titles as a courtesy even without the gate.
 6. Branch discipline: substrate work commits to a named branch (for example `substrate/server-tier`), pushes to `origin`, and does not rely on uncommitted local state.
 
 ### Done when
@@ -158,11 +158,11 @@ CRUD routes in `server/src/routes/drawings.route.ts` and `server/src/routes/user
 
 Done when a drawing saved by one user survives a full service restart and a cleared browser storage, and returns elements that `restoreElements` accepts unchanged.
 
-Then stop. The showcase ticket backlog below lists what comes next. Nothing else ships in Phase 2.
+Then stop. The backlog below lists what comes next. Nothing else ships in Phase 2.
 
 ## Phase 3. Cursor primitives and telemetry substrate
 
-There is nothing to mirror in this repository. Author the minimum set the showcase assumes, commit it, and push.
+There is nothing to mirror in this repository. Author the minimum set the conventions above require, commit it, and push.
 
 ### Deliverables
 
@@ -175,7 +175,7 @@ There is nothing to mirror in this repository. Author the minimum set the showca
 2. **`.cursor/skills/server-telemetry/SKILL.md`**
 
    - How to initialise the tracer (read `server/src/telemetry/tracer.ts`, do not duplicate).
-   - Prescribes `withApiSpan(operationName, { "excalidraw.api.route": ..., "excalidraw.api.method": ... }, fn)` as the distinctive fingerprint.
+   - Prescribes `withApiSpan(operationName, { "excalidraw.api.route": ..., "excalidraw.api.method": ... }, fn)` as the required call shape.
    - Examples for a GET and a POST handler.
 
 3. **`.cursor/rules/server-conventions.mdc`**
@@ -202,13 +202,13 @@ There is nothing to mirror in this repository. Author the minimum set the showca
 ### Done when
 
 1. Every file under `server/src/routes/` and `server/src/telemetry/` is matched by at least one rule glob.
-2. A dry-run prompt against this branch produces a plan that names `registerRoutes` and `withApiSpan` without being told those names in the prompt.
+2. A planning pass against this branch produces a plan that names `registerRoutes` and `withApiSpan` without being given those names, which is how we know the skills are self-sufficient.
 3. The critique subagent rejects a plan that adds a route outside `server/src/routes/` or skips registration.
 4. All primitives are committed and pushed; `git status` is clean on the substrate branch.
 
-## Showcase ticket backlog
+## Backlog
 
-Future Jira tickets for the showcase must be tiny, produce a one-screen diff, and edit files inside the telemetry rule globs. Each entry names the files touched so ticket writing is transcription.
+Near-term tickets. Each stays small, edits files already covered by the rule globs, and names the files it touches so ticket writing is transcription.
 
 | Ticket | Scope | Files touched |
 | --- | --- | --- |
@@ -216,24 +216,24 @@ Future Jira tickets for the showcase must be tiny, produce a one-screen diff, an
 | **Archive drawing** | `POST /drawings/:id/archive` soft-delete flag | `drawings.route.ts`, `routes/index.ts`, `schema.ts`, migration, `packages/api-types`, test file |
 | **Drawing metadata** | `tags` text column, returned on GET | `schema.ts`, migration, `drawings.route.ts`, `packages/api-types`, test file |
 
-Deliberately excluded from the backlog: folders, comments, sharing, permissions, search, templates, and full duplication flows that span the React app — those either blow the one-screen diff or edit paths outside `server/src/**`.
+Deliberately excluded from the backlog: folders, comments, sharing, permissions, search, templates, and full duplication flows that span the React app — those either grow past a reviewable diff or edit paths outside `server/src/**`.
 
-## Showcase readiness
+## Readiness for agent-driven work
 
-Before running `cursor-primitives-showcase-plan.md` Phase 3 (automations), confirm:
+Before handing a backlog ticket to an automation-launched cloud agent, confirm:
 
 | Precondition | Check |
 | --- | --- |
 | Substrate branch pushed | Remote has latest `.cursor/` and `server/` |
 | `./scripts/verify.sh` green locally and on PR | `verify.yml` passes |
 | Rule globs × edited paths | Pick a backlog ticket; list its files; each matches `server-telemetry.mdc` globs |
-| Registration fingerprint visible | `routes/index.ts` has one line per route; diff is obvious |
-| Telemetry fingerprint visible | Handlers call `withApiSpan`; skill name appears in diff |
+| Registration path exercised | `routes/index.ts` has one line per route |
+| Telemetry convention applied | Handlers call `withApiSpan` with the prescribed attribute keys |
 | Node pin | `.nvmrc` is 20; cloud image uses same major |
 | Automation prompt encodes | explore → plan → critique → implement → instrument per rules → open PR → stop; PR title conventional commit |
 | Inherited red checks | Upstream-only PR workflows disabled on this fork |
 
-Dry-run gate: on the substrate branch, run explore → plan → critique against the first backlog ticket without implementing. The plan must cite `registerRoutes`, `@excalidraw/api-types`, and `withApiSpan`. If it does not, fix the skills before pre-executing the cloud run.
+Dry-run gate: on the substrate branch, run explore → plan → critique against the first backlog ticket without implementing. The plan must cite `registerRoutes`, `@excalidraw/api-types`, and `withApiSpan`. If it does not, fix the skills before handing real work to an agent.
 
 ## Verification
 
@@ -261,10 +261,10 @@ Every gate must be observed failing before it is trusted. A gate nobody has seen
 | Seeded user or no identity at all | Seeded user, since ownership and authorship depend on it |
 | Express or a smaller framework | Express |
 | Server test environment | Per-file `// @vitest-environment node` docblock (decided) |
-| First showcase ticket after Phase 3 | Rename drawing (smallest diff in backlog) |
+| First ticket after Phase 3 | Rename drawing (smallest diff in backlog) |
 
 ## Notes
 
 The repository has no upstream remote configured. `origin` points at the fork. Adding an upstream remote is worthwhile if pulling later fixes matters, and keeping changes additive where practical keeps that option open.
 
-Automations, Jira webhooks, Slack act two, and the pre-executed cloud run are specified in `cursor-primitives-showcase-plan.md`. This plan ends when the substrate branch is green, pushed, and passes the showcase readiness dry-run.
+Automation triggers and cloud agent configuration live outside this repository. This plan ends when the substrate branch is green, pushed, and passes the readiness dry-run above.
