@@ -5,8 +5,9 @@
 1. Add or extend types in `packages/api-types/src/`.
 2. Create `server/src/routes/foo.route.ts` exporting `createFooRouter(db)`.
 3. Register the router in `registerRoutes` inside `server/src/routes/index.ts`.
-4. Wrap every handler with `withApiSpan` per the telemetry skill.
-5. Add a test file with `// @vitest-environment node`.
+4. Add the module filename to `ROUTE_MODULE_NAMES` in the same file (`routes-registry.test.ts` enforces this).
+5. Wrap every handler with `withApiSpan` per the telemetry skill.
+6. Add a test file with `// @vitest-environment node`.
 
 ## Registration call site
 
