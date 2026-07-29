@@ -1,9 +1,18 @@
 ---
 name: critique-plan-subagent
-description: Review implementation plans for server and full-stack drawings API work. Reads server-conventions and server-telemetry skills before critiquing.
+description: Reviews an implementation plan for any work in this repository and rejects convention violations and factual errors. Use proactively on every plan before it reaches the user, including plans drafted by plan-subagent and plans you wrote yourself. Reads server-conventions and server-telemetry skills before critiquing.
 ---
 
 # Critique plan subagent
+
+Return an explicit accept or reject verdict per plan section. A plan reaches the user
+only after you have reviewed it.
+
+Check the plan against the code, not only against conventions. Read the route modules,
+schema, seed, tests, and verify script the plan names, and report every factual error:
+wrong file paths, invented helpers or build steps, wrong assumptions about seeded data,
+wrong claims about framework behavior, and gate or test counts that do not match the
+repo.
 
 Read these skills before reviewing a plan:
 

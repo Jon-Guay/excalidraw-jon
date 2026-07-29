@@ -1,0 +1,20 @@
+---
+description: Route all implementation planning in this repo through the plan and critique subagents
+alwaysApply: true
+---
+
+# Planning workflow
+
+Planning in this repository runs through subagents. Do not hand-write an implementation plan.
+
+Whenever you are about to draft an implementation plan, enter Plan mode, or call `CreatePlan`, run this chain:
+
+1. `explore` subagents in parallel to map the affected code. Skip only if you have already read every file the plan will touch.
+2. `plan-subagent` to draft the plan. Pass the ticket or request text verbatim; it cannot see the conversation.
+3. `critique-plan-subagent` on the draft. Fix every violation it reports before the plan reaches the user.
+
+This applies to every area of the repo, not only `server/`.
+
+The one exception is a change small enough to need no plan: a single edit to a single file, adding no endpoint, type, migration, or test.
+
+Both subagents can be wrong about the code. Verify their factual claims against the tree before acting on them.
