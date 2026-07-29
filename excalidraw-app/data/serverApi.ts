@@ -49,9 +49,9 @@ export const listUsers = () => request<ListUsersResponse>("/users");
 
 export const listDrawings = (ownerId: string, includeArchived = false) =>
   request<ListDrawingsResponse>(
-    `/drawings?ownerId=${encodeURIComponent(
-      ownerId,
-    )}&includeArchived=${String(includeArchived)}`,
+    `/drawings?ownerId=${encodeURIComponent(ownerId)}&includeArchived=${String(
+      includeArchived,
+    )}`,
   );
 
 export const getDrawing = (id: string) =>
