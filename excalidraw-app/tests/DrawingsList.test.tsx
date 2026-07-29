@@ -3,7 +3,7 @@ import {
   render,
   screen,
   waitFor,
-} from "@excalidraw/excalidraw/tests/test-utils";
+} from "@testing-library/react";
 
 import { Provider, appJotaiStore } from "../app-jotai";
 import { DrawingsList } from "../components/DrawingsList";
@@ -70,7 +70,7 @@ describe("DrawingsList archive flow", () => {
       return { drawing: activeDrawing };
     });
 
-    await render(
+    render(
       <Provider store={appJotaiStore}>
         <DrawingsList />
       </Provider>,
