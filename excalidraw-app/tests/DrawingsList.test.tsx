@@ -1,9 +1,4 @@
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import { Provider, appJotaiStore } from "../app-jotai";
 import { DrawingsList } from "../components/DrawingsList";
@@ -56,8 +51,8 @@ describe("DrawingsList archive flow", () => {
           ? [archivedDrawing]
           : [activeDrawing]
         : archived
-          ? []
-          : [activeDrawing],
+        ? []
+        : [activeDrawing],
     }));
 
     archiveDrawingMock.mockImplementation(async () => {
@@ -79,7 +74,9 @@ describe("DrawingsList archive flow", () => {
     expect(await screen.findByText("Roadmap sketch")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Archive" }));
-    await waitFor(() => expect(archiveDrawingMock).toHaveBeenCalledWith("drawing-1"));
+    await waitFor(() =>
+      expect(archiveDrawingMock).toHaveBeenCalledWith("drawing-1"),
+    );
     await waitFor(() =>
       expect(screen.queryByText("Roadmap sketch")).not.toBeInTheDocument(),
     );
@@ -89,7 +86,9 @@ describe("DrawingsList archive flow", () => {
     expect(screen.getByRole("button", { name: "Restore" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Restore" }));
-    await waitFor(() => expect(restoreDrawingMock).toHaveBeenCalledWith("drawing-1"));
+    await waitFor(() =>
+      expect(restoreDrawingMock).toHaveBeenCalledWith("drawing-1"),
+    );
 
     fireEvent.click(screen.getByRole("checkbox", { name: "Show archived" }));
     expect(await screen.findByText("Roadmap sketch")).toBeInTheDocument();
