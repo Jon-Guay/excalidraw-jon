@@ -39,7 +39,7 @@ describe("GET /health", () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
       status: "ok",
-      migrationVersion: "0001_init",
+      migrationVersion: "0002_drawings_archive",
     });
   });
 });

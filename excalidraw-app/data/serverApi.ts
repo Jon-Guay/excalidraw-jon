@@ -49,7 +49,9 @@ export const listUsers = () => request<ListUsersResponse>("/users");
 
 export const listDrawings = (ownerId: string, includeArchived = false) =>
   request<ListDrawingsResponse>(
-    `/drawings?ownerId=${encodeURIComponent(ownerId)}&includeArchived=${String(includeArchived)}`,
+    `/drawings?ownerId=${encodeURIComponent(
+      ownerId,
+    )}&includeArchived=${String(includeArchived)}`,
   );
 
 export const getDrawing = (id: string) =>
@@ -73,13 +75,19 @@ export const deleteDrawing = (id: string) =>
   });
 
 export const archiveDrawing = (id: string) =>
-  request<ArchiveDrawingResponse>(`/drawings/${encodeURIComponent(id)}/archive`, {
-    method: "POST",
-  });
+  request<ArchiveDrawingResponse>(
+    `/drawings/${encodeURIComponent(id)}/archive`,
+    {
+      method: "POST",
+    },
+  );
 
 export const restoreDrawing = (id: string) =>
-  request<RestoreDrawingResponse>(`/drawings/${encodeURIComponent(id)}/restore`, {
-    method: "POST",
-  });
+  request<RestoreDrawingResponse>(
+    `/drawings/${encodeURIComponent(id)}/restore`,
+    {
+      method: "POST",
+    },
+  );
 
 export type { Drawing };

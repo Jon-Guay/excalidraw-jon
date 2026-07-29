@@ -65,7 +65,9 @@ describe("drawings routes", () => {
       ),
     ).toBe(true);
 
-    const archiveResponse = await request(app).post(`/drawings/${drawingId}/archive`);
+    const archiveResponse = await request(app).post(
+      `/drawings/${drawingId}/archive`,
+    );
     expect(archiveResponse.status).toBe(200);
     expect(archiveResponse.body.drawing.archivedAt).toBeTruthy();
 
@@ -87,11 +89,15 @@ describe("drawings routes", () => {
       ),
     ).toBe(true);
 
-    const restoreResponse = await request(app).post(`/drawings/${drawingId}/restore`);
+    const restoreResponse = await request(app).post(
+      `/drawings/${drawingId}/restore`,
+    );
     expect(restoreResponse.status).toBe(200);
     expect(restoreResponse.body.drawing.archivedAt).toBeNull();
 
-    const listAfterRestore = await request(app).get("/drawings?ownerId=user-alice");
+    const listAfterRestore = await request(app).get(
+      "/drawings?ownerId=user-alice",
+    );
     const restoredDrawing = listAfterRestore.body.drawings.find(
       (d: { id: string }) => d.id === drawingId,
     );
@@ -125,7 +131,9 @@ describe("drawings routes", () => {
     await request(app).post(`/drawings/${drawingId}/restore`).expect(200);
 
     const restartedApp = createApp(createDb(dbPath));
-    const getResponse = await request(restartedApp).get(`/drawings/${drawingId}`);
+    const getResponse = await request(restartedApp).get(
+      `/drawings/${drawingId}`,
+    );
     expect(getResponse.status).toBe(200);
     expect(getResponse.body.drawing.scene).toEqual(scene);
   });
