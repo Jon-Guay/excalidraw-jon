@@ -20,18 +20,29 @@ const drawingsRequests = new Map<string, ReturnType<typeof listDrawings>>();
 
 const loadDrawings = (ownerId: string, force: boolean) => {
   if (force) {
+    // Drop both the in-flight promise and the cache so remounts can't
+    // rehydrate stale drawings and skip awaiting the newer fetch.
     drawingsRequests.delete(ownerId);
+    drawingsCache.delete(ownerId);
   }
-  const pending =
-    drawingsRequests.get(ownerId) ??
-    listDrawings(ownerId).then((response) => {
-      if (response) {
-        drawingsCache.set(ownerId, response.drawings);
-      } else {
-        drawingsRequests.delete(ownerId);
-      }
+
+  const existing = drawingsRequests.get(ownerId);
+  if (existing) {
+    return existing;
+  }
+
+  const pending = listDrawings(ownerId).then((response) => {
+    // A later force-refresh may have replaced this request; don't write back.
+    if (drawingsRequests.get(ownerId) !== pending) {
       return response;
-    });
+    }
+    if (response) {
+      drawingsCache.set(ownerId, response.drawings);
+    } else {
+      drawingsRequests.delete(ownerId);
+    }
+    return response;
+  });
   drawingsRequests.set(ownerId, pending);
   return pending;
 };

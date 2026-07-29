@@ -59,7 +59,7 @@ export const UserSwitcher = ({ style }: { style?: React.CSSProperties }) => {
         persistCurrentUserId(response.users[0].id);
       }
     });
-  }, [currentUserId, setCurrentUserId]);
+  }, [currentUserId, setCurrentUserId, users]);
 
   if (!isServerConfigured()) {
     return null;
