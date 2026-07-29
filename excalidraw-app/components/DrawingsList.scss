@@ -12,12 +12,21 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .drawings-list__header h3 {
   margin: 0;
   font-size: 1rem;
+}
+
+.drawings-list__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  cursor: pointer;
 }
 
 .drawings-list__items {
@@ -37,6 +46,10 @@
   text-align: left;
 }
 
-.drawings-list__delete {
+.drawings-list__item--archived button:first-child {
+  opacity: 0.6;
+}
+
+.drawings-list__action {
   flex: 0 0 auto;
 }
