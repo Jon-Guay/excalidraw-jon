@@ -15,22 +15,59 @@ import { UserSwitcher } from "./UserSwitcher";
 
 import "./DrawingsList.scss";
 
+const drawingsCache = new Map<string, Drawing[]>();
+const drawingsRequests = new Map<string, ReturnType<typeof listDrawings>>();
+
+const loadDrawings = (ownerId: string, force: boolean) => {
+  if (force) {
+    drawingsRequests.delete(ownerId);
+  }
+  const pending =
+    drawingsRequests.get(ownerId) ??
+    listDrawings(ownerId).then((response) => {
+      if (response) {
+        drawingsCache.set(ownerId, response.drawings);
+      } else {
+        drawingsRequests.delete(ownerId);
+      }
+      return response;
+    });
+  drawingsRequests.set(ownerId, pending);
+  return pending;
+};
+
+export const preloadDrawings = (ownerId: string) =>
+  loadDrawings(ownerId, false);
+
 export const DrawingsList = () => {
   const currentUserId = useAtomValue(currentUserIdAtom);
-  const [drawings, setDrawings] = useState<Drawing[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [drawings, setDrawings] = useState<Drawing[]>(
+    currentUserId ? drawingsCache.get(currentUserId) ?? [] : [],
+  );
+  const [loading, setLoading] = useState(
+    currentUserId ? !drawingsCache.has(currentUserId) : false,
+  );
   const serverConfigured = isServerConfigured();
 
-  const refresh = useCallback(async () => {
-    if (!currentUserId) {
-      setDrawings([]);
-      return;
-    }
-    setLoading(true);
-    const response = await listDrawings(currentUserId);
-    setDrawings(response?.drawings ?? []);
-    setLoading(false);
-  }, [currentUserId]);
+  const refresh = useCallback(
+    async (force = false) => {
+      if (!currentUserId) {
+        setDrawings([]);
+        return;
+      }
+      const cachedDrawings = drawingsCache.get(currentUserId);
+      if (!force && cachedDrawings) {
+        setDrawings(cachedDrawings);
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      const response = await loadDrawings(currentUserId, force);
+      setDrawings(response?.drawings ?? []);
+      setLoading(false);
+    },
+    [currentUserId],
+  );
 
   useEffect(() => {
     refresh();
@@ -51,14 +88,14 @@ export const DrawingsList = () => {
       title: `Drawing ${drawings.length + 1}`,
     });
     if (response?.drawing) {
-      await refresh();
+      await refresh(true);
       openDrawing(response.drawing.id);
     }
   };
 
   const handleDelete = async (drawingId: string) => {
     await deleteDrawing(drawingId);
-    await refresh();
+    await refresh(true);
   };
 
   return (

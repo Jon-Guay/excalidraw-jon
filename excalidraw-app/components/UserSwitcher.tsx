@@ -10,10 +10,27 @@ import {
   persistCurrentUserId,
 } from "../data/currentUser";
 
+let cachedUsers: User[] = [];
+let usersRequest: ReturnType<typeof listUsers> | null = null;
+
+const loadUsers = () => {
+  usersRequest ??= listUsers().then((response) => {
+    if (response?.users.length) {
+      cachedUsers = response.users;
+    } else {
+      usersRequest = null;
+    }
+    return response;
+  });
+  return usersRequest;
+};
+
+export const preloadUsers = loadUsers;
+
 export const UserSwitcher = ({ style }: { style?: React.CSSProperties }) => {
   const [currentUserId, setCurrentUserId] = useAtom(currentUserIdAtom);
   const setActiveDrawingId = useSetAtom(activeDrawingIdAtom);
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<User[]>(cachedUsers);
   const [loadState, setLoadState] = useState<"idle" | "loading" | "error">(
     "idle",
   );
@@ -22,8 +39,15 @@ export const UserSwitcher = ({ style }: { style?: React.CSSProperties }) => {
     if (!isServerConfigured()) {
       return;
     }
+    if (users.length) {
+      if (!currentUserId) {
+        setCurrentUserId(users[0].id);
+        persistCurrentUserId(users[0].id);
+      }
+      return;
+    }
     setLoadState("loading");
-    listUsers().then((response) => {
+    loadUsers().then((response) => {
       if (!response?.users.length) {
         setLoadState("error");
         return;

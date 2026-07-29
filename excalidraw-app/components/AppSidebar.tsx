@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 import { DefaultSidebar, Sidebar, THEME } from "@excalidraw/excalidraw";
 import {
   messageCircleIcon,
@@ -7,8 +9,12 @@ import {
 import { LinkButton } from "@excalidraw/excalidraw/components/LinkButton";
 import { useUIAppState } from "@excalidraw/excalidraw/context/ui-appState";
 
+import { useAtomValue } from "../app-jotai";
+import { currentUserIdAtom } from "../data/currentUser";
+
 import "./AppSidebar.scss";
-import { DrawingsList } from "./DrawingsList";
+import { DrawingsList, preloadDrawings } from "./DrawingsList";
+import { preloadUsers } from "./UserSwitcher";
 
 type SidebarPromoCopyProps = {
   text: string;
@@ -69,6 +75,14 @@ const SidebarPromoCopy = (props: SidebarPromoCopyProps) => {
 
 export const AppSidebar = () => {
   const { theme, openSidebar } = useUIAppState();
+  const currentUserId = useAtomValue(currentUserIdAtom);
+
+  useEffect(() => {
+    void preloadUsers();
+    if (currentUserId) {
+      void preloadDrawings(currentUserId);
+    }
+  }, [currentUserId]);
 
   return (
     <DefaultSidebar>
