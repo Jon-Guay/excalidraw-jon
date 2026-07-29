@@ -3,12 +3,14 @@ export type Drawing = {
   ownerId: string;
   title: string;
   scene: unknown;
+  archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
 
 export type ListDrawingsQuery = {
   ownerId?: string;
+  includeArchived?: boolean;
 };
 
 export type ListDrawingsResponse = {
@@ -40,4 +42,12 @@ export type UpdateDrawingResponse = {
 
 export type DeleteDrawingResponse = {
   id: string;
+};
+
+export type ArchiveDrawingResponse = {
+  drawing: Drawing;
+};
+
+export type RestoreDrawingResponse = {
+  drawing: Drawing;
 };

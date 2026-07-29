@@ -13,6 +13,7 @@ export const drawings = sqliteTable("drawings", {
     .references(() => users.id),
   title: text("title").notNull(),
   scene: text("scene").notNull(),
+  archivedAt: integer("archived_at", { mode: "timestamp_ms" }),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
 });

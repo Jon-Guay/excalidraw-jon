@@ -3,10 +3,11 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useAtomValue } from "../app-jotai";
 import { currentUserIdAtom } from "../data/currentUser";
 import {
+  archiveDrawing,
   createDrawing,
-  deleteDrawing,
   isServerConfigured,
   listDrawings,
+  restoreDrawing,
   type Drawing,
 } from "../data/serverApi";
 import { setServerDrawingSavePaused } from "../data/serverDrawingSave";
@@ -19,6 +20,7 @@ export const DrawingsList = () => {
   const currentUserId = useAtomValue(currentUserIdAtom);
   const [drawings, setDrawings] = useState<Drawing[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const serverConfigured = isServerConfigured();
 
   const refresh = useCallback(async () => {
@@ -27,10 +29,10 @@ export const DrawingsList = () => {
       return;
     }
     setLoading(true);
-    const response = await listDrawings(currentUserId);
+    const response = await listDrawings(currentUserId, showArchived);
     setDrawings(response?.drawings ?? []);
     setLoading(false);
-  }, [currentUserId]);
+  }, [currentUserId, showArchived]);
 
   useEffect(() => {
     refresh();
@@ -56,8 +58,13 @@ export const DrawingsList = () => {
     }
   };
 
-  const handleDelete = async (drawingId: string) => {
-    await deleteDrawing(drawingId);
+  const handleArchive = async (drawingId: string) => {
+    await archiveDrawing(drawingId);
+    await refresh();
+  };
+
+  const handleRestore = async (drawingId: string) => {
+    await restoreDrawing(drawingId);
     await refresh();
   };
 
@@ -76,6 +83,14 @@ export const DrawingsList = () => {
               New
             </button>
           </div>
+          <label className="drawings-list__show-archived">
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={(event) => setShowArchived(event.target.checked)}
+            />
+            Show archived
+          </label>
           {loading ? <p>Loading…</p> : null}
           <ul className="drawings-list__items">
             {drawings.map((drawing) => (
@@ -85,10 +100,14 @@ export const DrawingsList = () => {
                 </button>
                 <button
                   type="button"
-                  className="drawings-list__delete"
-                  onClick={() => handleDelete(drawing.id)}
+                  className="drawings-list__archive"
+                  onClick={() =>
+                    drawing.archivedAt
+                      ? handleRestore(drawing.id)
+                      : handleArchive(drawing.id)
+                  }
                 >
-                  Delete
+                  {drawing.archivedAt ? "Restore" : "Archive"}
                 </button>
               </li>
             ))}

@@ -37,6 +37,13 @@
   text-align: left;
 }
 
-.drawings-list__delete {
+.drawings-list__show-archived {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.drawings-list__archive {
   flex: 0 0 auto;
 }

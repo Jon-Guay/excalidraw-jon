@@ -35,6 +35,12 @@ const MIGRATIONS: Array<{ version: string; sql: string }> = [
       );
     `,
   },
+  {
+    version: "0002_drawings_archive",
+    sql: `
+      ALTER TABLE drawings ADD COLUMN archived_at INTEGER;
+    `,
+  },
 ];
 
 export const migrate = (dbPath: string): string => {
