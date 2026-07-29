@@ -90,11 +90,7 @@ export const DrawingsList = () => {
         return;
       }
       setLoading(true);
-      const response = await loadDrawings(
-        currentUserId,
-        force,
-        showArchived,
-      );
+      const response = await loadDrawings(currentUserId, force, showArchived);
       setDrawings(response?.drawings ?? []);
       setLoading(false);
     },
@@ -170,7 +166,9 @@ export const DrawingsList = () => {
               <li
                 key={drawing.id}
                 className={
-                  drawing.archivedAt ? "drawings-list__item--archived" : undefined
+                  drawing.archivedAt
+                    ? "drawings-list__item--archived"
+                    : undefined
                 }
               >
                 <button type="button" onClick={() => openDrawing(drawing.id)}>

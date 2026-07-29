@@ -32,9 +32,7 @@ const toDrawing = (row: typeof drawings.$inferSelect): Drawing => ({
   scene: parseScene(row.scene),
   createdAt: new Date(row.createdAt).toISOString(),
   updatedAt: new Date(row.updatedAt).toISOString(),
-  archivedAt: row.archivedAt
-    ? new Date(row.archivedAt).toISOString()
-    : null,
+  archivedAt: row.archivedAt ? new Date(row.archivedAt).toISOString() : null,
 });
 
 export const createDrawingsRouter = (db: DbClient): Router => {
@@ -63,12 +61,12 @@ export const createDrawingsRouter = (db: DbClient): Router => {
             filters.length === 0
               ? db.select().from(drawings).all()
               : filters.length === 1
-                ? db.select().from(drawings).where(filters[0]).all()
-                : db
-                    .select()
-                    .from(drawings)
-                    .where(and(...filters))
-                    .all();
+              ? db.select().from(drawings).where(filters[0]).all()
+              : db
+                  .select()
+                  .from(drawings)
+                  .where(and(...filters))
+                  .all();
 
           return { drawings: rows.map(toDrawing) };
         },
