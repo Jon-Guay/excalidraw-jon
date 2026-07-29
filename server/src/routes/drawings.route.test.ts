@@ -92,18 +92,12 @@ describe("drawings routes", () => {
       `/drawings/${drawingId}/archive`,
     );
     expect(archiveResponse.status).toBe(200);
-    expect(archiveResponse.body.drawing.archivedAt).toEqual(
-      expect.any(String),
-    );
+    expect(archiveResponse.body.drawing.archivedAt).toEqual(expect.any(String));
     expect(archiveResponse.body.drawing.scene).toEqual(scene);
 
-    const defaultList = await request(app).get(
-      "/drawings?ownerId=user-alice",
-    );
+    const defaultList = await request(app).get("/drawings?ownerId=user-alice");
     expect(
-      defaultList.body.drawings.some(
-        (d: { id: string }) => d.id === drawingId,
-      ),
+      defaultList.body.drawings.some((d: { id: string }) => d.id === drawingId),
     ).toBe(false);
 
     const archivedList = await request(app).get(
@@ -127,9 +121,7 @@ describe("drawings routes", () => {
     expect(restoreResponse.body.drawing.archivedAt).toBeNull();
     expect(restoreResponse.body.drawing.scene).toEqual(scene);
 
-    const restoredList = await request(app).get(
-      "/drawings?ownerId=user-alice",
-    );
+    const restoredList = await request(app).get("/drawings?ownerId=user-alice");
     expect(
       restoredList.body.drawings.some(
         (d: { id: string }) => d.id === drawingId,
