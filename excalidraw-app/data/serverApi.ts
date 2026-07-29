@@ -4,6 +4,8 @@ import type {
   DeleteDrawingResponse,
   Drawing,
   GetDrawingResponse,
+  ArchiveDrawingResponse,
+  RestoreDrawingResponse,
   ListDrawingsResponse,
   ListUsersResponse,
   UpdateDrawingRequest,
@@ -45,9 +47,14 @@ const request = async <T>(
 
 export const listUsers = () => request<ListUsersResponse>("/users");
 
-export const listDrawings = (ownerId: string) =>
+export const listDrawings = (
+  ownerId: string,
+  options?: { includeArchived?: boolean },
+) =>
   request<ListDrawingsResponse>(
-    `/drawings?ownerId=${encodeURIComponent(ownerId)}`,
+    `/drawings?ownerId=${encodeURIComponent(ownerId)}${
+      options?.includeArchived ? "&includeArchived=true" : ""
+    }`,
   );
 
 export const getDrawing = (id: string) =>
@@ -69,5 +76,17 @@ export const deleteDrawing = (id: string) =>
   request<DeleteDrawingResponse>(`/drawings/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
+
+export const archiveDrawing = (id: string) =>
+  request<ArchiveDrawingResponse>(
+    `/drawings/${encodeURIComponent(id)}/archive`,
+    { method: "PATCH" },
+  );
+
+export const restoreDrawing = (id: string) =>
+  request<RestoreDrawingResponse>(
+    `/drawings/${encodeURIComponent(id)}/restore`,
+    { method: "PATCH" },
+  );
 
 export type { Drawing };

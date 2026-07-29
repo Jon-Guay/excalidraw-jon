@@ -1,15 +1,18 @@
 import { randomUUID } from "node:crypto";
 
-import { eq } from "drizzle-orm";
 import { Router } from "express";
 
+import { and, eq, isNull } from "drizzle-orm";
+
 import type {
+  ArchiveDrawingResponse,
   CreateDrawingRequest,
   CreateDrawingResponse,
   DeleteDrawingResponse,
   Drawing,
   GetDrawingResponse,
   ListDrawingsResponse,
+  RestoreDrawingResponse,
   UpdateDrawingRequest,
   UpdateDrawingResponse,
 } from "@excalidraw/api-types";
@@ -30,6 +33,7 @@ const toDrawing = (row: typeof drawings.$inferSelect): Drawing => ({
   scene: parseScene(row.scene),
   createdAt: new Date(row.createdAt).toISOString(),
   updatedAt: new Date(row.updatedAt).toISOString(),
+  archivedAt: row.archivedAt ? new Date(row.archivedAt).toISOString() : null,
 });
 
 export const createDrawingsRouter = (db: DbClient): Router => {
@@ -40,18 +44,26 @@ export const createDrawingsRouter = (db: DbClient): Router => {
     asyncHandler(async (req, res) => {
       const ownerId =
         typeof req.query.ownerId === "string" ? req.query.ownerId : undefined;
+      const includeArchived =
+        req.query.includeArchived === "true" ||
+        req.query.includeArchived === "1";
 
       const body = await withApiSpan(
         "drawings.list",
         { "excalidraw.api.route": "/drawings", "excalidraw.api.method": "GET" },
         (): ListDrawingsResponse => {
-          const rows = ownerId
-            ? db
-                .select()
-                .from(drawings)
-                .where(eq(drawings.ownerId, ownerId))
-                .all()
+          const where = ownerId
+            ? includeArchived
+              ? eq(drawings.ownerId, ownerId)
+              : and(eq(drawings.ownerId, ownerId), isNull(drawings.archivedAt))
+            : includeArchived
+            ? undefined
+            : isNull(drawings.archivedAt);
+
+          const rows = where
+            ? db.select().from(drawings).where(where).all()
             : db.select().from(drawings).all();
+
           return { drawings: rows.map(toDrawing) };
         },
       );
@@ -115,6 +127,7 @@ export const createDrawingsRouter = (db: DbClient): Router => {
             ),
             createdAt: now,
             updatedAt: now,
+            archivedAt: null,
           };
           db.insert(drawings).values(row).run();
           return { drawing: toDrawing(row) };
@@ -189,6 +202,80 @@ export const createDrawingsRouter = (db: DbClient): Router => {
           }
           db.delete(drawings).where(eq(drawings.id, req.params.id)).run();
           return { id: req.params.id };
+        },
+      );
+      res.json(body);
+    }),
+  );
+
+  router.patch(
+    "/drawings/:id/archive",
+    asyncHandler(async (req, res) => {
+      const body = await withApiSpan(
+        "drawings.archive",
+        {
+          "excalidraw.api.route": "/drawings/:id/archive",
+          "excalidraw.api.method": "PATCH",
+        },
+        (): ArchiveDrawingResponse => {
+          const existing = db
+            .select()
+            .from(drawings)
+            .where(eq(drawings.id, req.params.id))
+            .get();
+          if (!existing) {
+            throw new HttpError(404, "Drawing not found");
+          }
+
+          const now = new Date();
+          const next = {
+            archivedAt: now,
+            updatedAt: now,
+          };
+
+          db.update(drawings)
+            .set(next)
+            .where(eq(drawings.id, req.params.id))
+            .run();
+
+          return { drawing: toDrawing({ ...existing, ...next }) };
+        },
+      );
+      res.json(body);
+    }),
+  );
+
+  router.patch(
+    "/drawings/:id/restore",
+    asyncHandler(async (req, res) => {
+      const body = await withApiSpan(
+        "drawings.restore",
+        {
+          "excalidraw.api.route": "/drawings/:id/restore",
+          "excalidraw.api.method": "PATCH",
+        },
+        (): RestoreDrawingResponse => {
+          const existing = db
+            .select()
+            .from(drawings)
+            .where(eq(drawings.id, req.params.id))
+            .get();
+          if (!existing) {
+            throw new HttpError(404, "Drawing not found");
+          }
+
+          const now = new Date();
+          const next = {
+            archivedAt: null,
+            updatedAt: now,
+          };
+
+          db.update(drawings)
+            .set(next)
+            .where(eq(drawings.id, req.params.id))
+            .run();
+
+          return { drawing: toDrawing({ ...existing, ...next }) };
         },
       );
       res.json(body);

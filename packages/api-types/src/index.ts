@@ -9,5 +9,7 @@ export type {
   CreateDrawingResponse,
   UpdateDrawingRequest,
   UpdateDrawingResponse,
+  ArchiveDrawingResponse,
+  RestoreDrawingResponse,
   DeleteDrawingResponse,
 } from "./drawings";

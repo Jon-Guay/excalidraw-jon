@@ -3,10 +3,12 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useAtomValue } from "../app-jotai";
 import { currentUserIdAtom } from "../data/currentUser";
 import {
+  archiveDrawing,
   createDrawing,
   deleteDrawing,
   isServerConfigured,
   listDrawings,
+  restoreDrawing,
   type Drawing,
 } from "../data/serverApi";
 import { setServerDrawingSavePaused } from "../data/serverDrawingSave";
@@ -19,6 +21,7 @@ export const DrawingsList = () => {
   const currentUserId = useAtomValue(currentUserIdAtom);
   const [drawings, setDrawings] = useState<Drawing[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const serverConfigured = isServerConfigured();
 
   const refresh = useCallback(async () => {
@@ -27,10 +30,12 @@ export const DrawingsList = () => {
       return;
     }
     setLoading(true);
-    const response = await listDrawings(currentUserId);
+    const response = await listDrawings(currentUserId, {
+      includeArchived: showArchived,
+    });
     setDrawings(response?.drawings ?? []);
     setLoading(false);
-  }, [currentUserId]);
+  }, [currentUserId, showArchived]);
 
   useEffect(() => {
     refresh();
@@ -61,6 +66,16 @@ export const DrawingsList = () => {
     await refresh();
   };
 
+  const handleArchive = async (drawingId: string) => {
+    await archiveDrawing(drawingId);
+    await refresh();
+  };
+
+  const handleRestore = async (drawingId: string) => {
+    await restoreDrawing(drawingId);
+    await refresh();
+  };
+
   return (
     <div className="drawings-list">
       <div className="drawings-list__persona">
@@ -72,17 +87,50 @@ export const DrawingsList = () => {
         <>
           <div className="drawings-list__header">
             <h3>Drawings</h3>
-            <button type="button" onClick={handleCreate}>
-              New
-            </button>
+            <div className="drawings-list__header-actions">
+              <label className="drawings-list__show-archived">
+                <input
+                  type="checkbox"
+                  checked={showArchived}
+                  onChange={(event) =>
+                    setShowArchived(event.currentTarget.checked)
+                  }
+                />
+                Show archived
+              </label>
+              <button type="button" onClick={handleCreate}>
+                New
+              </button>
+            </div>
           </div>
           {loading ? <p>Loading…</p> : null}
           <ul className="drawings-list__items">
             {drawings.map((drawing) => (
               <li key={drawing.id}>
-                <button type="button" onClick={() => openDrawing(drawing.id)}>
+                <button
+                  type="button"
+                  className="drawings-list__open"
+                  onClick={() => openDrawing(drawing.id)}
+                >
                   {drawing.title}
                 </button>
+                {drawing.archivedAt ? (
+                  <button
+                    type="button"
+                    className="drawings-list__archive"
+                    onClick={() => handleRestore(drawing.id)}
+                  >
+                    Restore
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="drawings-list__archive"
+                    onClick={() => handleArchive(drawing.id)}
+                  >
+                    Archive
+                  </button>
+                )}
                 <button
                   type="button"
                   className="drawings-list__delete"
