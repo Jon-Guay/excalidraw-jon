@@ -22,6 +22,14 @@ const cacheKey = (ownerId: string, includeArchived: boolean) =>
 const drawingsCache = new Map<string, Drawing[]>();
 const drawingsRequests = new Map<string, ReturnType<typeof listDrawings>>();
 
+const invalidateOwnerCaches = (ownerId: string) => {
+  for (const includeArchived of [false, true]) {
+    const key = cacheKey(ownerId, includeArchived);
+    drawingsRequests.delete(key);
+    drawingsCache.delete(key);
+  }
+};
+
 const loadDrawings = (
   ownerId: string,
   force: boolean,
@@ -30,10 +38,9 @@ const loadDrawings = (
   const key = cacheKey(ownerId, includeArchived);
 
   if (force) {
-    // Drop both the in-flight promise and the cache so remounts can't
-    // rehydrate stale drawings and skip awaiting the newer fetch.
-    drawingsRequests.delete(key);
-    drawingsCache.delete(key);
+    // Drop both list variants so archive/restore can't leave the other
+    // view on a stale cache when the toggle flips.
+    invalidateOwnerCaches(ownerId);
   }
 
   const existing = drawingsRequests.get(key);
