@@ -56,7 +56,7 @@ describe("GET /live", () => {
 
   it("stays healthy after the database connection is closed", async () => {
     const { app, db } = createTestApp();
-    (getSqlite(db) as { close: () => void }).close();
+    (getSqlite(db) as unknown as { close: () => void }).close();
 
     const live = await request(app).get("/live");
     expect(live.status).toBe(200);
