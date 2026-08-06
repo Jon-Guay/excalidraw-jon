@@ -1,4 +1,5 @@
 import type {
+  ArchiveDrawingResponse,
   CreateDrawingRequest,
   CreateDrawingResponse,
   DeleteDrawingResponse,
@@ -6,6 +7,7 @@ import type {
   GetDrawingResponse,
   ListDrawingsResponse,
   ListUsersResponse,
+  RestoreDrawingResponse,
   UpdateDrawingRequest,
   UpdateDrawingResponse,
 } from "@excalidraw/api-types";
@@ -45,10 +47,16 @@ const request = async <T>(
 
 export const listUsers = () => request<ListUsersResponse>("/users");
 
-export const listDrawings = (ownerId: string) =>
-  request<ListDrawingsResponse>(
-    `/drawings?ownerId=${encodeURIComponent(ownerId)}`,
-  );
+export const listDrawings = (
+  ownerId: string,
+  options?: { includeArchived?: boolean },
+) => {
+  const params = new URLSearchParams({ ownerId });
+  if (options?.includeArchived) {
+    params.set("includeArchived", "true");
+  }
+  return request<ListDrawingsResponse>(`/drawings?${params}`);
+};
 
 export const getDrawing = (id: string) =>
   request<GetDrawingResponse>(`/drawings/${encodeURIComponent(id)}`);
@@ -64,6 +72,18 @@ export const updateDrawing = (id: string, payload: UpdateDrawingRequest) =>
     method: "PATCH",
     body: JSON.stringify(payload),
   });
+
+export const archiveDrawing = (id: string) =>
+  request<ArchiveDrawingResponse>(
+    `/drawings/${encodeURIComponent(id)}/archive`,
+    { method: "POST" },
+  );
+
+export const restoreDrawing = (id: string) =>
+  request<RestoreDrawingResponse>(
+    `/drawings/${encodeURIComponent(id)}/restore`,
+    { method: "POST" },
+  );
 
 export const deleteDrawing = (id: string) =>
   request<DeleteDrawingResponse>(`/drawings/${encodeURIComponent(id)}`, {

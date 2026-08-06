@@ -3,10 +3,11 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useAtomValue } from "../app-jotai";
 import { currentUserIdAtom } from "../data/currentUser";
 import {
+  archiveDrawing,
   createDrawing,
-  deleteDrawing,
   isServerConfigured,
   listDrawings,
+  restoreDrawing,
   type Drawing,
 } from "../data/serverApi";
 import { setServerDrawingSavePaused } from "../data/serverDrawingSave";
@@ -15,48 +16,70 @@ import { UserSwitcher } from "./UserSwitcher";
 
 import "./DrawingsList.scss";
 
+const cacheKey = (ownerId: string, includeArchived: boolean) =>
+  `${ownerId}:${includeArchived ? "all" : "active"}`;
+
 const drawingsCache = new Map<string, Drawing[]>();
 const drawingsRequests = new Map<string, ReturnType<typeof listDrawings>>();
 
-const loadDrawings = (ownerId: string, force: boolean) => {
+const invalidateOwnerCaches = (ownerId: string) => {
+  for (const includeArchived of [false, true]) {
+    const key = cacheKey(ownerId, includeArchived);
+    drawingsRequests.delete(key);
+    drawingsCache.delete(key);
+  }
+};
+
+const loadDrawings = (
+  ownerId: string,
+  force: boolean,
+  includeArchived: boolean,
+) => {
+  const key = cacheKey(ownerId, includeArchived);
+
   if (force) {
-    // Drop both the in-flight promise and the cache so remounts can't
-    // rehydrate stale drawings and skip awaiting the newer fetch.
-    drawingsRequests.delete(ownerId);
-    drawingsCache.delete(ownerId);
+    // Drop both list variants so archive/restore can't leave the other
+    // view on a stale cache when the toggle flips.
+    invalidateOwnerCaches(ownerId);
   }
 
-  const existing = drawingsRequests.get(ownerId);
+  const existing = drawingsRequests.get(key);
   if (existing) {
     return existing;
   }
 
-  const pending = listDrawings(ownerId).then((response) => {
-    // A later force-refresh may have replaced this request; don't write back.
-    if (drawingsRequests.get(ownerId) !== pending) {
+  const pending = listDrawings(ownerId, { includeArchived }).then(
+    (response) => {
+      // A later force-refresh may have replaced this request; don't write back.
+      if (drawingsRequests.get(key) !== pending) {
+        return response;
+      }
+      if (response) {
+        drawingsCache.set(key, response.drawings);
+      } else {
+        drawingsRequests.delete(key);
+      }
       return response;
-    }
-    if (response) {
-      drawingsCache.set(ownerId, response.drawings);
-    } else {
-      drawingsRequests.delete(ownerId);
-    }
-    return response;
-  });
-  drawingsRequests.set(ownerId, pending);
+    },
+  );
+  drawingsRequests.set(key, pending);
   return pending;
 };
 
 export const preloadDrawings = (ownerId: string) =>
-  loadDrawings(ownerId, false);
+  loadDrawings(ownerId, false, false);
 
 export const DrawingsList = () => {
   const currentUserId = useAtomValue(currentUserIdAtom);
+  const [showArchived, setShowArchived] = useState(false);
+  const activeCacheKey = currentUserId
+    ? cacheKey(currentUserId, showArchived)
+    : null;
   const [drawings, setDrawings] = useState<Drawing[]>(
-    currentUserId ? drawingsCache.get(currentUserId) ?? [] : [],
+    activeCacheKey ? drawingsCache.get(activeCacheKey) ?? [] : [],
   );
   const [loading, setLoading] = useState(
-    currentUserId ? !drawingsCache.has(currentUserId) : false,
+    activeCacheKey ? !drawingsCache.has(activeCacheKey) : false,
   );
   const serverConfigured = isServerConfigured();
 
@@ -66,18 +89,19 @@ export const DrawingsList = () => {
         setDrawings([]);
         return;
       }
-      const cachedDrawings = drawingsCache.get(currentUserId);
+      const key = cacheKey(currentUserId, showArchived);
+      const cachedDrawings = drawingsCache.get(key);
       if (!force && cachedDrawings) {
         setDrawings(cachedDrawings);
         setLoading(false);
         return;
       }
       setLoading(true);
-      const response = await loadDrawings(currentUserId, force);
+      const response = await loadDrawings(currentUserId, force, showArchived);
       setDrawings(response?.drawings ?? []);
       setLoading(false);
     },
-    [currentUserId],
+    [currentUserId, showArchived],
   );
 
   useEffect(() => {
@@ -104,9 +128,20 @@ export const DrawingsList = () => {
     }
   };
 
-  const handleDelete = async (drawingId: string) => {
-    await deleteDrawing(drawingId);
+  const handleArchive = async (drawingId: string) => {
+    await archiveDrawing(drawingId);
     await refresh(true);
+  };
+
+  const handleRestore = async (drawingId: string) => {
+    await restoreDrawing(drawingId);
+    await refresh(true);
+  };
+
+  const handleShowArchivedChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    setShowArchived(event.target.checked);
   };
 
   return (
@@ -124,20 +159,45 @@ export const DrawingsList = () => {
               New
             </button>
           </div>
+          <label className="drawings-list__toggle">
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={handleShowArchivedChange}
+            />
+            Show archived
+          </label>
           {loading ? <p>Loading…</p> : null}
           <ul className="drawings-list__items">
             {drawings.map((drawing) => (
-              <li key={drawing.id}>
+              <li
+                key={drawing.id}
+                className={
+                  drawing.archivedAt
+                    ? "drawings-list__item--archived"
+                    : undefined
+                }
+              >
                 <button type="button" onClick={() => openDrawing(drawing.id)}>
                   {drawing.title}
                 </button>
-                <button
-                  type="button"
-                  className="drawings-list__delete"
-                  onClick={() => handleDelete(drawing.id)}
-                >
-                  Delete
-                </button>
+                {drawing.archivedAt ? (
+                  <button
+                    type="button"
+                    className="drawings-list__action"
+                    onClick={() => handleRestore(drawing.id)}
+                  >
+                    Restore
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="drawings-list__action"
+                    onClick={() => handleArchive(drawing.id)}
+                  >
+                    Archive
+                  </button>
+                )}
               </li>
             ))}
           </ul>
