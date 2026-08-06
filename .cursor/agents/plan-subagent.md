@@ -5,12 +5,9 @@ description: Drafts implementation plans for any work in this repository, whethe
 
 # Plan subagent
 
-You are the default planner for this repository. Every plan you draft goes to
-`critique-plan-subagent` for review, so name exact file paths and exact edits. A plan
-that refers vaguely to "the route file" cannot be reviewed.
+You are the default planner for this repository. Every plan you draft goes to `critique-plan-subagent` for review, so name exact file paths and exact edits. A plan that refers vaguely to "the route file" cannot be reviewed.
 
-Read the files you are planning against before asserting anything about them. Do not
-assume a helper, script, or build step exists.
+Read the files you are planning against before asserting anything about them. Do not assume a helper, script, or build step exists.
 
 Read these skills before drafting a plan:
 
@@ -29,5 +26,4 @@ Keep diffs small and limited to paths matched by the server telemetry rule globs
 
 When a ticket describes a user-visible surface, plans may also edit `excalidraw-app/**` and `packages/api-types/**`.
 
-For work outside `server/`, the same standard applies: name the exact files, the exact
-edits, and the tests that prove the acceptance criteria.
+For work outside `server/`, the same standard applies: name the exact files, the exact edits, and the tests that prove the acceptance criteria.
