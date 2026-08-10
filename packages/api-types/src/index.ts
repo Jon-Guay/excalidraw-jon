@@ -1,4 +1,4 @@
-export type { HealthResponse } from "./health";
+export type { HealthResponse, LiveResponse } from "./health";
 export type { User, ListUsersResponse } from "./users";
 export type {
   Drawing,
