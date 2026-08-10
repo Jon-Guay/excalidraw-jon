@@ -29,6 +29,10 @@ export type CreateDrawingResponse = {
   drawing: Drawing;
 };
 
+export type DuplicateDrawingResponse = {
+  drawing: Drawing;
+};
+
 export type UpdateDrawingRequest = {
   title?: string;
   scene?: unknown;

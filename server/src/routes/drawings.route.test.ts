@@ -60,3 +60,59 @@ describe("drawings routes", () => {
     expect(deleteResponse.body.id).toBe(drawingId);
   });
 });
+
+describe("POST /drawings/:id/duplicate", () => {
+  const scene = {
+    type: "excalidraw",
+    version: 2,
+    elements: [{ id: "el-1", type: "rectangle" }],
+    appState: { viewBackgroundColor: "#ffffff" },
+  };
+
+  it("copies the scene into a new drawing owned by the same user", async () => {
+    const app = createTestApp();
+
+    const createResponse = await request(app)
+      .post("/drawings")
+      .send({ ownerId: "user-alice", title: "Original", scene });
+    expect(createResponse.status).toBe(201);
+    const originalId = createResponse.body.drawing.id;
+
+    const duplicateResponse = await request(app).post(
+      `/drawings/${originalId}/duplicate`,
+    );
+
+    expect(duplicateResponse.status).toBe(201);
+    expect(duplicateResponse.body.drawing.id).not.toBe(originalId);
+    expect(duplicateResponse.body.drawing.title).toBe("Original (copy)");
+    expect(duplicateResponse.body.drawing.ownerId).toBe("user-alice");
+    expect(duplicateResponse.body.drawing.scene).toEqual(scene);
+  });
+
+  it("leaves the original drawing unchanged", async () => {
+    const app = createTestApp();
+
+    const createResponse = await request(app)
+      .post("/drawings")
+      .send({ ownerId: "user-alice", title: "Original", scene });
+    const originalId = createResponse.body.drawing.id;
+    const originalBefore = createResponse.body.drawing;
+
+    await request(app).post(`/drawings/${originalId}/duplicate`);
+
+    const getResponse = await request(app).get(`/drawings/${originalId}`);
+    expect(getResponse.body.drawing.title).toBe(originalBefore.title);
+    expect(getResponse.body.drawing.scene).toEqual(originalBefore.scene);
+    expect(getResponse.body.drawing.updatedAt).toBe(originalBefore.updatedAt);
+  });
+
+  it("returns 404 for an unknown drawing id", async () => {
+    const app = createTestApp();
+
+    const duplicateResponse = await request(app).post(
+      "/drawings/does-not-exist/duplicate",
+    );
+
+    expect(duplicateResponse.status).toBe(404);
+  });
+});

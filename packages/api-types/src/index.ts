@@ -7,6 +7,7 @@ export type {
   GetDrawingResponse,
   CreateDrawingRequest,
   CreateDrawingResponse,
+  DuplicateDrawingResponse,
   UpdateDrawingRequest,
   UpdateDrawingResponse,
   DeleteDrawingResponse,
