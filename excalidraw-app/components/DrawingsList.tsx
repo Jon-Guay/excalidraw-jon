@@ -5,6 +5,7 @@ import { currentUserIdAtom } from "../data/currentUser";
 import {
   createDrawing,
   deleteDrawing,
+  duplicateDrawing,
   isServerConfigured,
   listDrawings,
   type Drawing,
@@ -109,6 +110,14 @@ export const DrawingsList = () => {
     await refresh(true);
   };
 
+  const handleDuplicate = async (drawingId: string) => {
+    const response = await duplicateDrawing(drawingId);
+    await refresh(true);
+    if (response?.drawing) {
+      openDrawing(response.drawing.id);
+    }
+  };
+
   return (
     <div className="drawings-list">
       <div className="drawings-list__persona">
@@ -130,6 +139,13 @@ export const DrawingsList = () => {
               <li key={drawing.id}>
                 <button type="button" onClick={() => openDrawing(drawing.id)}>
                   {drawing.title}
+                </button>
+                <button
+                  type="button"
+                  className="drawings-list__duplicate"
+                  onClick={() => handleDuplicate(drawing.id)}
+                >
+                  Duplicate
                 </button>
                 <button
                   type="button"

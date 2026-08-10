@@ -3,6 +3,7 @@ import type {
   CreateDrawingResponse,
   DeleteDrawingResponse,
   Drawing,
+  DuplicateDrawingResponse,
   GetDrawingResponse,
   ListDrawingsResponse,
   ListUsersResponse,
@@ -69,5 +70,11 @@ export const deleteDrawing = (id: string) =>
   request<DeleteDrawingResponse>(`/drawings/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
+
+export const duplicateDrawing = (id: string) =>
+  request<DuplicateDrawingResponse>(
+    `/drawings/${encodeURIComponent(id)}/duplicate`,
+    { method: "POST" },
+  );
 
 export type { Drawing };
