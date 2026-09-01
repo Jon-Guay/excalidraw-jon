@@ -8,6 +8,7 @@ import type {
   CreateDrawingResponse,
   DeleteDrawingResponse,
   Drawing,
+  DuplicateDrawingResponse,
   GetDrawingResponse,
   ListDrawingsResponse,
   UpdateDrawingRequest,
@@ -113,6 +114,42 @@ export const createDrawingsRouter = (db: DbClient): Router => {
                   appState: {},
                 } as unknown),
             ),
+            createdAt: now,
+            updatedAt: now,
+          };
+          db.insert(drawings).values(row).run();
+          return { drawing: toDrawing(row) };
+        },
+      );
+      res.status(201).json(body);
+    }),
+  );
+
+  router.post(
+    "/drawings/:id/duplicate",
+    asyncHandler(async (req, res) => {
+      const body = await withApiSpan(
+        "drawings.duplicate",
+        {
+          "excalidraw.api.route": "/drawings/:id/duplicate",
+          "excalidraw.api.method": "POST",
+        },
+        (): DuplicateDrawingResponse => {
+          const existing = db
+            .select()
+            .from(drawings)
+            .where(eq(drawings.id, req.params.id))
+            .get();
+          if (!existing) {
+            throw new HttpError(404, "Drawing not found");
+          }
+
+          const now = new Date();
+          const row = {
+            id: randomUUID(),
+            ownerId: existing.ownerId,
+            title: `${existing.title} (copy)`,
+            scene: existing.scene,
             createdAt: now,
             updatedAt: now,
           };
