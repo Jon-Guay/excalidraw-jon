@@ -32,6 +32,10 @@ const saveDrawingToServer = throttle(
   SAVE_TO_LOCAL_STORAGE_TIMEOUT,
 );
 
+export const cancelServerDrawingSave = () => {
+  saveDrawingToServer.cancel();
+};
+
 export const queueServerDrawingSave = (
   elements: Parameters<typeof serializeAsJSON>[0],
   appState: Parameters<typeof serializeAsJSON>[1],

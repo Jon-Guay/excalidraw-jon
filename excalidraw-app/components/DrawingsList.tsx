@@ -1,7 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
 
-import { useAtomValue } from "../app-jotai";
-import { currentUserIdAtom } from "../data/currentUser";
+import { useAtomValue, useSetAtom } from "../app-jotai";
+import {
+  activeDrawingIdAtom,
+  currentUserIdAtom,
+  sceneResetRequestAtom,
+} from "../data/currentUser";
 import {
   archiveDrawing,
   createDrawing,
@@ -10,7 +14,11 @@ import {
   restoreDrawing,
   type Drawing,
 } from "../data/serverApi";
-import { setServerDrawingSavePaused } from "../data/serverDrawingSave";
+import {
+  cancelServerDrawingSave,
+  setServerDrawingId,
+  setServerDrawingSavePaused,
+} from "../data/serverDrawingSave";
 
 import { UserSwitcher } from "./UserSwitcher";
 
@@ -70,6 +78,9 @@ export const preloadDrawings = (ownerId: string) =>
 
 export const DrawingsList = () => {
   const currentUserId = useAtomValue(currentUserIdAtom);
+  const activeDrawingId = useAtomValue(activeDrawingIdAtom);
+  const setActiveDrawingId = useSetAtom(activeDrawingIdAtom);
+  const requestSceneReset = useSetAtom(sceneResetRequestAtom);
   const [showArchived, setShowArchived] = useState(false);
   const listKey = currentUserId ? cacheKey(currentUserId, showArchived) : null;
   const [drawings, setDrawings] = useState<Drawing[]>(
@@ -126,13 +137,36 @@ export const DrawingsList = () => {
   };
 
   const handleArchive = async (drawingId: string) => {
-    await archiveDrawing(drawingId);
+    const isActive = activeDrawingId === drawingId;
+    if (isActive) {
+      setServerDrawingSavePaused(true);
+      cancelServerDrawingSave();
+    }
+
+    const response = await archiveDrawing(drawingId);
+    if (!response) {
+      if (isActive) {
+        setServerDrawingSavePaused(false);
+      }
+      return;
+    }
+
+    if (isActive) {
+      setServerDrawingId(null);
+      setActiveDrawingId(null);
+      requestSceneReset((request) => request + 1);
+      setServerDrawingSavePaused(false);
+    }
     await refresh(true);
   };
 
   const handleRestore = async (drawingId: string) => {
-    await restoreDrawing(drawingId);
+    const response = await restoreDrawing(drawingId);
+    if (!response) {
+      return;
+    }
     await refresh(true);
+    openDrawing(drawingId);
   };
 
   return (

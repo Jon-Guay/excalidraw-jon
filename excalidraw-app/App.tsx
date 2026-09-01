@@ -130,7 +130,7 @@ import {
   localStorageQuotaExceededAtom,
 } from "./data/LocalData";
 import { isBrowserStorageStateNewer } from "./data/tabSync";
-import { activeDrawingIdAtom } from "./data/currentUser";
+import { activeDrawingIdAtom, sceneResetRequestAtom } from "./data/currentUser";
 import { getDrawing } from "./data/serverApi";
 import {
   queueServerDrawingSave,
@@ -406,6 +406,7 @@ const initializeScene = async (opts: {
 const ExcalidrawWrapper = () => {
   const excalidrawAPI = useExcalidrawAPI();
   const activeDrawingId = useAtomValue(activeDrawingIdAtom);
+  const sceneResetRequest = useAtomValue(sceneResetRequestAtom);
 
   const [errorMessage, setErrorMessage] = useState("");
   const isCollabDisabled = isRunningInIframe();
@@ -432,6 +433,13 @@ const ExcalidrawWrapper = () => {
   useEffect(() => {
     setServerDrawingId(activeDrawingId);
   }, [activeDrawingId]);
+
+  useEffect(() => {
+    if (!excalidrawAPI || sceneResetRequest === 0) {
+      return;
+    }
+    excalidrawAPI.resetScene();
+  }, [excalidrawAPI, sceneResetRequest]);
 
   useEffect(() => {
     trackEvent("load", "frame", getFrame());

@@ -24,3 +24,4 @@ export const persistCurrentUserId = (userId: string) => {
 };
 
 export const activeDrawingIdAtom = atom<string | null>(null);
+export const sceneResetRequestAtom = atom(0);
