@@ -219,7 +219,7 @@ gate_migrate() {
   rm -f "$log"
   rm -rf "$tmpdir"
 
-  if [[ "$first" == *"0001_init"* && "$second" == *"0001_init"* ]]; then
+  if [[ "$first" == *"0002_archive_drawings"* && "$second" == *"0002_archive_drawings"* ]]; then
     record migrate PASS "migrations idempotent on throwaway db"
   else
     record migrate FAIL "second migration run did not no-op cleanly"
@@ -313,7 +313,7 @@ gate_api() {
 
   stop_api_server
 
-  if [[ "$body" == *'"status":"ok"'* && "$body" == *'"migrationVersion":"0001_init"'* ]]; then
+  if [[ "$body" == *'"status":"ok"'* && "$body" == *'"migrationVersion":"0002_archive_drawings"'* ]]; then
     if [[ -z "$(port_listener_pids "$port")" ]]; then
       record api PASS "GET /health returned expected body on :${port}"
     else

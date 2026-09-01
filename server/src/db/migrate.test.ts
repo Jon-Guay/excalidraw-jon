@@ -19,9 +19,11 @@ describe("migrate", () => {
     const first = migrate(dbPath);
     const second = migrate(dbPath);
 
-    expect(first).toBe("0001_init");
-    expect(second).toBe("0001_init");
-    expect(getAppliedMigrationVersion(createDb(dbPath))).toBe("0001_init");
+    expect(first).toBe("0002_archive_drawings");
+    expect(second).toBe("0002_archive_drawings");
+    expect(getAppliedMigrationVersion(createDb(dbPath))).toBe(
+      "0002_archive_drawings",
+    );
 
     fs.rmSync(dbPath, { force: true });
   });
