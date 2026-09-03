@@ -1,6 +1,7 @@
 import { createDrawingsRouter } from "./drawings.route.js";
 import { createHealthRouter } from "./health.route.js";
 import { createUsersRouter } from "./users.route.js";
+import { createWorkspaceRouter } from "./workspace.route.js";
 
 import type { DbClient } from "../db/client.js";
 
@@ -10,10 +11,12 @@ export const registerRoutes = (app: Express, db: DbClient): void => {
   app.use(createHealthRouter(db));
   app.use(createUsersRouter(db));
   app.use(createDrawingsRouter(db));
+  app.use(createWorkspaceRouter(db));
 };
 
 export const ROUTE_MODULE_NAMES = [
   "health.route.ts",
   "users.route.ts",
   "drawings.route.ts",
+  "workspace.route.ts",
 ] as const;

@@ -11,3 +11,4 @@ export type {
   UpdateDrawingResponse,
   DeleteDrawingResponse,
 } from "./drawings";
+export type { WorkspaceSummaryResponse } from "./workspace";
