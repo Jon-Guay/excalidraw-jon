@@ -20,6 +20,7 @@ type NodeStatementSync = {
 type NodeDatabaseSync = {
   exec: (sql: string) => void;
   prepare: (sql: string) => NodeStatementSync;
+  close: () => void;
 };
 
 type PreparedStatement = {
@@ -32,6 +33,7 @@ type PreparedStatement = {
 export type SqliteClient = {
   exec: (sql: string) => void;
   prepare: (sql: string) => PreparedStatement;
+  close: () => void;
   transaction?: <T extends (...args: never[]) => unknown>(
     fn: T,
   ) => T & {
@@ -86,6 +88,10 @@ class NodeDatabase implements SqliteClient {
 
   prepare(sql: string) {
     return new NodeStatement(this.db.prepare(sql));
+  }
+
+  close() {
+    this.db.close();
   }
 
   transaction<T extends (...args: never[]) => unknown>(

@@ -7,13 +7,13 @@ import request from "supertest";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createApp } from "../app.js";
-import { createDb } from "../db/client.js";
+import { createDb, getSqlite } from "../db/client.js";
 import { migrate } from "../db/migrate.js";
 import { seed } from "../db/seed.js";
 
 const tempDbs: string[] = [];
 
-const createTestApp = () => {
+const createTestContext = () => {
   const dbPath = path.join(
     os.tmpdir(),
     `excalidraw-test-${Date.now()}-${Math.random()}.db`,
@@ -22,8 +22,10 @@ const createTestApp = () => {
   migrate(dbPath);
   seed(dbPath);
   const db = createDb(dbPath);
-  return createApp(db);
+  return { app: createApp(db), db };
 };
+
+const createTestApp = () => createTestContext().app;
 
 afterEach(() => {
   for (const dbPath of tempDbs.splice(0)) {
@@ -41,5 +43,28 @@ describe("GET /health", () => {
       status: "ok",
       migrationVersion: "0001_init",
     });
+  });
+});
+
+describe("GET /live", () => {
+  it("returns 200 without a migration version", async () => {
+    const app = createTestApp();
+    const response = await request(app).get("/live");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ status: "ok" });
+    expect(response.body).not.toHaveProperty("migrationVersion");
+  });
+
+  it("returns 200 when the database connection is closed", async () => {
+    const { app, db } = createTestContext();
+    getSqlite(db).close();
+
+    const live = await request(app).get("/live");
+    expect(live.status).toBe(200);
+    expect(live.body).toEqual({ status: "ok" });
+
+    const health = await request(app).get("/health");
+    expect(health.status).not.toBe(200);
   });
 });
