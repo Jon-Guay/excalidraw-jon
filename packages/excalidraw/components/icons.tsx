@@ -218,6 +218,33 @@ export const LockedIconFilled = createIcon(
   },
 );
 
+// custom — toolbar lock toggle (soccer ball)
+export const FootballIcon = createIcon(
+  <g strokeWidth="1.25">
+    <circle cx="10" cy="10" r="7.5" />
+    <path
+      d="M10 4.5 11.8 7.2 10.8 10.2 9.2 10.2 8.2 7.2Z"
+      fill="currentColor"
+      stroke="none"
+    />
+    <path d="M10 4.5 7.2 6.1M10 4.5 12.8 6.1M8.2 7.2 6.1 8.8M11.8 7.2 13.9 8.8M9.2 10.2 7.5 12.5M10.8 10.2 12.5 12.5" />
+  </g>,
+  modifiedTablerIconProps,
+);
+
+export const FootballIconFilled = createIcon(
+  <g strokeWidth="1.5">
+    <circle cx="10" cy="10" r="7.5" />
+    <path
+      d="M10 4.5 11.8 7.2 10.8 10.2 9.2 10.2 8.2 7.2Z"
+      fill="currentColor"
+      stroke="none"
+    />
+    <path d="M10 4.5 7.2 6.1M10 4.5 12.8 6.1M8.2 7.2 6.1 8.8M11.8 7.2 13.9 8.8M9.2 10.2 7.5 12.5M10.8 10.2 12.5 12.5" />
+  </g>,
+  modifiedTablerIconProps,
+);
+
 // custom
 export const WelcomeScreenMenuArrow = createIcon(
   <>

@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import type { HealthResponse } from "@excalidraw/api-types";
+import type { HealthResponse, LivenessResponse } from "@excalidraw/api-types";
 
 import { getAppliedMigrationVersion } from "../db/client.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
@@ -21,6 +21,18 @@ export const createHealthRouter = (db: DbClient): Router => {
           status: "ok",
           migrationVersion: getAppliedMigrationVersion(db),
         }),
+      );
+      res.json(body);
+    }),
+  );
+
+  router.get(
+    "/livez",
+    asyncHandler(async (_req, res) => {
+      const body = await withApiSpan(
+        "health.live",
+        { "excalidraw.api.route": "/livez", "excalidraw.api.method": "GET" },
+        (): LivenessResponse => ({ status: "ok" }),
       );
       res.json(body);
     }),
