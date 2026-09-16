@@ -37,6 +37,20 @@
   text-align: left;
 }
 
-.drawings-list__delete {
+.drawings-list__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.drawings-list__action {
   flex: 0 0 auto;
+}
+
+.drawings-list__item--archived button:first-of-type {
+  opacity: 0.65;
+  font-style: italic;
 }
