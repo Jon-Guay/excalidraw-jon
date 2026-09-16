@@ -22,6 +22,8 @@ import { withApiSpan } from "../telemetry/withApiSpan.js";
 
 import type { DbClient } from "../db/client.js";
 
+const DUPLICATE_ROUTE = "/drawings/:id/duplicate" as const;
+
 const parseScene = (value: string): unknown => JSON.parse(value);
 
 const toDrawing = (row: typeof drawings.$inferSelect): Drawing => ({
@@ -125,13 +127,15 @@ export const createDrawingsRouter = (db: DbClient): Router => {
     }),
   );
 
+  // Public route: this demo drawings API has no auth middleware; duplicate is
+  // unauthenticated like the existing create/list/get/patch/delete handlers.
   router.post(
-    "/drawings/:id/duplicate",
+    DUPLICATE_ROUTE,
     asyncHandler(async (req, res) => {
       const body = await withApiSpan(
         "drawings.duplicate",
         {
-          "excalidraw.api.route": "/drawings/:id/duplicate",
+          "excalidraw.api.route": DUPLICATE_ROUTE,
           "excalidraw.api.method": "POST",
         },
         (): DuplicateDrawingResponse => {
