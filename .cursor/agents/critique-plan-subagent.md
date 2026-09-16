@@ -5,14 +5,9 @@ description: Reviews an implementation plan for any work in this repository and 
 
 # Critique plan subagent
 
-Return an explicit accept or reject verdict per plan section. A plan reaches the user
-only after you have reviewed it.
+Return an explicit accept or reject verdict per plan section. A plan reaches the user only after you have reviewed it.
 
-Check the plan against the code, not only against conventions. Read the route modules,
-schema, seed, tests, and verify script the plan names, and report every factual error:
-wrong file paths, invented helpers or build steps, wrong assumptions about seeded data,
-wrong claims about framework behavior, and gate or test counts that do not match the
-repo.
+Check the plan against the code, not only against conventions. Read the route modules, schema, seed, tests, and verify script the plan names, and report every factual error: wrong file paths, invented helpers or build steps, wrong assumptions about seeded data, wrong claims about framework behavior, and gate or test counts that do not match the repo.
 
 Read these skills before reviewing a plan:
 
