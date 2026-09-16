@@ -3,6 +3,4 @@
  * New public endpoints must be listed here and carry a justification comment
  * on the route registration.
  */
-export const PUBLIC_ROUTE_PATHS = [
-  "POST /drawings/:id/duplicate",
-] as const;
+export const PUBLIC_ROUTE_PATHS = ["POST /drawings/:id/duplicate"] as const;
