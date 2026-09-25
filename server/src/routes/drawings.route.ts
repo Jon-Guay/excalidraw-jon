@@ -8,6 +8,7 @@ import type {
   CreateDrawingResponse,
   DeleteDrawingResponse,
   Drawing,
+  DuplicateDrawingResponse,
   GetDrawingResponse,
   ListDrawingsResponse,
   UpdateDrawingRequest,
@@ -20,6 +21,8 @@ import { HttpError } from "../middleware/errorHandler.js";
 import { withApiSpan } from "../telemetry/withApiSpan.js";
 
 import type { DbClient } from "../db/client.js";
+
+const DUPLICATE_ROUTE = "/drawings/:id/duplicate" as const;
 
 const parseScene = (value: string): unknown => JSON.parse(value);
 
@@ -113,6 +116,44 @@ export const createDrawingsRouter = (db: DbClient): Router => {
                   appState: {},
                 } as unknown),
             ),
+            createdAt: now,
+            updatedAt: now,
+          };
+          db.insert(drawings).values(row).run();
+          return { drawing: toDrawing(row) };
+        },
+      );
+      res.status(201).json(body);
+    }),
+  );
+
+  // Public route: this demo drawings API has no auth middleware; duplicate is
+  // unauthenticated like the existing create/list/get/patch/delete handlers.
+  router.post(
+    DUPLICATE_ROUTE,
+    asyncHandler(async (req, res) => {
+      const body = await withApiSpan(
+        "drawings.duplicate",
+        {
+          "excalidraw.api.route": DUPLICATE_ROUTE,
+          "excalidraw.api.method": "POST",
+        },
+        (): DuplicateDrawingResponse => {
+          const existing = db
+            .select()
+            .from(drawings)
+            .where(eq(drawings.id, req.params.id))
+            .get();
+          if (!existing) {
+            throw new HttpError(404, "Drawing not found");
+          }
+
+          const now = new Date();
+          const row = {
+            id: randomUUID(),
+            ownerId: existing.ownerId,
+            title: `${existing.title} (copy)`,
+            scene: existing.scene,
             createdAt: now,
             updatedAt: now,
           };

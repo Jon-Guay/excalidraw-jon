@@ -59,4 +59,67 @@ describe("drawings routes", () => {
     const deleteResponse = await request(app).delete(`/drawings/${drawingId}`);
     expect(deleteResponse.body.id).toBe(drawingId);
   });
+
+  it("duplicates a drawing with the same scene JSON", async () => {
+    const app = createTestApp();
+    const scene = {
+      type: "excalidraw",
+      version: 2,
+      elements: [{ id: "el-1" }],
+      appState: { viewBackgroundColor: "#ff00ff" },
+    };
+
+    const createResponse = await request(app)
+      .post("/drawings")
+      .send({ ownerId: "user-alice", title: "Source", scene });
+
+    expect(createResponse.status).toBe(201);
+    const source = createResponse.body.drawing;
+
+    const duplicateResponse = await request(app).post(
+      `/drawings/${source.id}/duplicate`,
+    );
+
+    expect(duplicateResponse.status).toBe(201);
+    const copy = duplicateResponse.body.drawing;
+    expect(copy.id).not.toBe(source.id);
+    expect(copy.title).toBe("Source (copy)");
+    expect(copy.ownerId).toBe(source.ownerId);
+    expect(copy.scene).toEqual(scene);
+  });
+
+  it("leaves the original drawing unchanged after duplicate", async () => {
+    const app = createTestApp();
+    const scene = {
+      type: "excalidraw",
+      version: 2,
+      elements: [{ id: "el-unchanged" }],
+      appState: {},
+    };
+
+    const createResponse = await request(app)
+      .post("/drawings")
+      .send({ ownerId: "user-alice", title: "Keep me", scene });
+
+    const source = createResponse.body.drawing;
+
+    await request(app).post(`/drawings/${source.id}/duplicate`);
+
+    const getResponse = await request(app).get(`/drawings/${source.id}`);
+    expect(getResponse.status).toBe(200);
+    expect(getResponse.body.drawing.title).toBe(source.title);
+    expect(getResponse.body.drawing.scene).toEqual(source.scene);
+    expect(getResponse.body.drawing.updatedAt).toBe(source.updatedAt);
+  });
+
+  it("returns 404 when duplicating an unknown drawing id", async () => {
+    const app = createTestApp();
+
+    const response = await request(app).post(
+      "/drawings/does-not-exist/duplicate",
+    );
+
+    expect(response.status).toBe(404);
+    expect(response.body).toEqual({ error: "Drawing not found" });
+  });
 });
