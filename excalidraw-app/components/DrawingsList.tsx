@@ -3,10 +3,12 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useAtomValue } from "../app-jotai";
 import { currentUserIdAtom } from "../data/currentUser";
 import {
+  archiveDrawing,
   createDrawing,
   deleteDrawing,
   isServerConfigured,
   listDrawings,
+  restoreDrawing,
   type Drawing,
 } from "../data/serverApi";
 import { setServerDrawingSavePaused } from "../data/serverDrawingSave";
@@ -18,45 +20,62 @@ import "./DrawingsList.scss";
 const drawingsCache = new Map<string, Drawing[]>();
 const drawingsRequests = new Map<string, ReturnType<typeof listDrawings>>();
 
-const loadDrawings = (ownerId: string, force: boolean) => {
+const cacheKey = (ownerId: string, includeArchived: boolean) =>
+  `${ownerId}:${includeArchived ? "all" : "active"}`;
+
+const invalidateOwnerCaches = (ownerId: string) => {
+  for (const includeArchived of [false, true]) {
+    const key = cacheKey(ownerId, includeArchived);
+    drawingsRequests.delete(key);
+    drawingsCache.delete(key);
+  }
+};
+
+const loadDrawings = (
+  ownerId: string,
+  force: boolean,
+  includeArchived = false,
+) => {
+  const key = cacheKey(ownerId, includeArchived);
   if (force) {
-    // Drop both the in-flight promise and the cache so remounts can't
-    // rehydrate stale drawings and skip awaiting the newer fetch.
-    drawingsRequests.delete(ownerId);
-    drawingsCache.delete(ownerId);
+    invalidateOwnerCaches(ownerId);
   }
 
-  const existing = drawingsRequests.get(ownerId);
+  const existing = drawingsRequests.get(key);
   if (existing) {
     return existing;
   }
 
-  const pending = listDrawings(ownerId).then((response) => {
-    // A later force-refresh may have replaced this request; don't write back.
-    if (drawingsRequests.get(ownerId) !== pending) {
+  const pending = listDrawings(ownerId, { includeArchived }).then(
+    (response) => {
+      if (drawingsRequests.get(key) !== pending) {
+        return response;
+      }
+      if (response) {
+        drawingsCache.set(key, response.drawings);
+      } else {
+        drawingsRequests.delete(key);
+      }
       return response;
-    }
-    if (response) {
-      drawingsCache.set(ownerId, response.drawings);
-    } else {
-      drawingsRequests.delete(ownerId);
-    }
-    return response;
-  });
-  drawingsRequests.set(ownerId, pending);
+    },
+  );
+  drawingsRequests.set(key, pending);
   return pending;
 };
 
 export const preloadDrawings = (ownerId: string) =>
-  loadDrawings(ownerId, false);
+  loadDrawings(ownerId, false, false);
 
 export const DrawingsList = () => {
   const currentUserId = useAtomValue(currentUserIdAtom);
+  const [showArchived, setShowArchived] = useState(false);
   const [drawings, setDrawings] = useState<Drawing[]>(
-    currentUserId ? drawingsCache.get(currentUserId) ?? [] : [],
+    currentUserId
+      ? drawingsCache.get(cacheKey(currentUserId, false)) ?? []
+      : [],
   );
   const [loading, setLoading] = useState(
-    currentUserId ? !drawingsCache.has(currentUserId) : false,
+    currentUserId ? !drawingsCache.has(cacheKey(currentUserId, false)) : false,
   );
   const serverConfigured = isServerConfigured();
 
@@ -66,18 +85,19 @@ export const DrawingsList = () => {
         setDrawings([]);
         return;
       }
-      const cachedDrawings = drawingsCache.get(currentUserId);
+      const key = cacheKey(currentUserId, showArchived);
+      const cachedDrawings = drawingsCache.get(key);
       if (!force && cachedDrawings) {
         setDrawings(cachedDrawings);
         setLoading(false);
         return;
       }
       setLoading(true);
-      const response = await loadDrawings(currentUserId, force);
+      const response = await loadDrawings(currentUserId, force, showArchived);
       setDrawings(response?.drawings ?? []);
       setLoading(false);
     },
-    [currentUserId],
+    [currentUserId, showArchived],
   );
 
   useEffect(() => {
@@ -109,6 +129,16 @@ export const DrawingsList = () => {
     await refresh(true);
   };
 
+  const handleArchive = async (drawingId: string) => {
+    await archiveDrawing(drawingId);
+    await refresh(true);
+  };
+
+  const handleRestore = async (drawingId: string) => {
+    await restoreDrawing(drawingId);
+    await refresh(true);
+  };
+
   return (
     <div className="drawings-list">
       <div className="drawings-list__persona">
@@ -124,6 +154,14 @@ export const DrawingsList = () => {
               New
             </button>
           </div>
+          <label className="drawings-list__toggle">
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={(event) => setShowArchived(event.target.checked)}
+            />
+            Show archived
+          </label>
           {loading ? <p>Loading…</p> : null}
           <ul className="drawings-list__items">
             {drawings.map((drawing) => (
@@ -131,6 +169,23 @@ export const DrawingsList = () => {
                 <button type="button" onClick={() => openDrawing(drawing.id)}>
                   {drawing.title}
                 </button>
+                {drawing.archivedAt ? (
+                  <button
+                    type="button"
+                    className="drawings-list__restore"
+                    onClick={() => handleRestore(drawing.id)}
+                  >
+                    Restore
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="drawings-list__archive"
+                    onClick={() => handleArchive(drawing.id)}
+                  >
+                    Archive
+                  </button>
+                )}
                 <button
                   type="button"
                   className="drawings-list__delete"

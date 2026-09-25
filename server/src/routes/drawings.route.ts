@@ -1,15 +1,17 @@
 import { randomUUID } from "node:crypto";
 
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { Router } from "express";
 
 import type {
+  ArchiveDrawingResponse,
   CreateDrawingRequest,
   CreateDrawingResponse,
   DeleteDrawingResponse,
   Drawing,
   GetDrawingResponse,
   ListDrawingsResponse,
+  RestoreDrawingResponse,
   UpdateDrawingRequest,
   UpdateDrawingResponse,
 } from "@excalidraw/api-types";
@@ -30,28 +32,46 @@ const toDrawing = (row: typeof drawings.$inferSelect): Drawing => ({
   scene: parseScene(row.scene),
   createdAt: new Date(row.createdAt).toISOString(),
   updatedAt: new Date(row.updatedAt).toISOString(),
+  archivedAt: row.archivedAt ? new Date(row.archivedAt).toISOString() : null,
 });
 
 export const createDrawingsRouter = (db: DbClient): Router => {
   const router = Router();
+
+  const getDrawingOrThrow = (id: string) => {
+    const row = db.select().from(drawings).where(eq(drawings.id, id)).get();
+    if (!row) {
+      throw new HttpError(404, "Drawing not found");
+    }
+    return row;
+  };
 
   router.get(
     "/drawings",
     asyncHandler(async (req, res) => {
       const ownerId =
         typeof req.query.ownerId === "string" ? req.query.ownerId : undefined;
+      const includeArchived = req.query.includeArchived === "true";
 
       const body = await withApiSpan(
         "drawings.list",
         { "excalidraw.api.route": "/drawings", "excalidraw.api.method": "GET" },
         (): ListDrawingsResponse => {
-          const rows = ownerId
-            ? db
-                .select()
-                .from(drawings)
-                .where(eq(drawings.ownerId, ownerId))
-                .all()
-            : db.select().from(drawings).all();
+          const filters = [];
+          if (ownerId) {
+            filters.push(eq(drawings.ownerId, ownerId));
+          }
+          if (!includeArchived) {
+            filters.push(isNull(drawings.archivedAt));
+          }
+
+          const query = db.select().from(drawings);
+          const rows =
+            filters.length === 0
+              ? query.all()
+              : filters.length === 1
+              ? query.where(filters[0]).all()
+              : query.where(and(...filters)).all();
           return { drawings: rows.map(toDrawing) };
         },
       );
@@ -68,17 +88,9 @@ export const createDrawingsRouter = (db: DbClient): Router => {
           "excalidraw.api.route": "/drawings/:id",
           "excalidraw.api.method": "GET",
         },
-        (): GetDrawingResponse => {
-          const row = db
-            .select()
-            .from(drawings)
-            .where(eq(drawings.id, req.params.id))
-            .get();
-          if (!row) {
-            throw new HttpError(404, "Drawing not found");
-          }
-          return { drawing: toDrawing(row) };
-        },
+        (): GetDrawingResponse => ({
+          drawing: toDrawing(getDrawingOrThrow(req.params.id)),
+        }),
       );
       res.json(body);
     }),
@@ -115,6 +127,7 @@ export const createDrawingsRouter = (db: DbClient): Router => {
             ),
             createdAt: now,
             updatedAt: now,
+            archivedAt: null,
           };
           db.insert(drawings).values(row).run();
           return { drawing: toDrawing(row) };
@@ -136,15 +149,7 @@ export const createDrawingsRouter = (db: DbClient): Router => {
           "excalidraw.api.method": "PATCH",
         },
         (): UpdateDrawingResponse => {
-          const existing = db
-            .select()
-            .from(drawings)
-            .where(eq(drawings.id, req.params.id))
-            .get();
-          if (!existing) {
-            throw new HttpError(404, "Drawing not found");
-          }
-
+          const existing = getDrawingOrThrow(req.params.id);
           const updatedAt = new Date();
           const next = {
             title: payload.title ?? existing.title,
@@ -169,6 +174,64 @@ export const createDrawingsRouter = (db: DbClient): Router => {
     }),
   );
 
+  router.post(
+    "/drawings/:id/archive",
+    asyncHandler(async (req, res) => {
+      const body = await withApiSpan(
+        "drawings.archive",
+        {
+          "excalidraw.api.route": "/drawings/:id/archive",
+          "excalidraw.api.method": "POST",
+        },
+        (): ArchiveDrawingResponse => {
+          const existing = getDrawingOrThrow(req.params.id);
+          const now = new Date();
+          db.update(drawings)
+            .set({ archivedAt: now, updatedAt: now })
+            .where(eq(drawings.id, req.params.id))
+            .run();
+          return {
+            drawing: toDrawing({
+              ...existing,
+              archivedAt: now,
+              updatedAt: now,
+            }),
+          };
+        },
+      );
+      res.json(body);
+    }),
+  );
+
+  router.post(
+    "/drawings/:id/restore",
+    asyncHandler(async (req, res) => {
+      const body = await withApiSpan(
+        "drawings.restore",
+        {
+          "excalidraw.api.route": "/drawings/:id/restore",
+          "excalidraw.api.method": "POST",
+        },
+        (): RestoreDrawingResponse => {
+          const existing = getDrawingOrThrow(req.params.id);
+          const now = new Date();
+          db.update(drawings)
+            .set({ archivedAt: null, updatedAt: now })
+            .where(eq(drawings.id, req.params.id))
+            .run();
+          return {
+            drawing: toDrawing({
+              ...existing,
+              archivedAt: null,
+              updatedAt: now,
+            }),
+          };
+        },
+      );
+      res.json(body);
+    }),
+  );
+
   router.delete(
     "/drawings/:id",
     asyncHandler(async (req, res) => {
@@ -179,14 +242,7 @@ export const createDrawingsRouter = (db: DbClient): Router => {
           "excalidraw.api.method": "DELETE",
         },
         (): DeleteDrawingResponse => {
-          const existing = db
-            .select()
-            .from(drawings)
-            .where(eq(drawings.id, req.params.id))
-            .get();
-          if (!existing) {
-            throw new HttpError(404, "Drawing not found");
-          }
+          getDrawingOrThrow(req.params.id);
           db.delete(drawings).where(eq(drawings.id, req.params.id)).run();
           return { id: req.params.id };
         },
