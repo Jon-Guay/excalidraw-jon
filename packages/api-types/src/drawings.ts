@@ -41,3 +41,7 @@ export type UpdateDrawingResponse = {
 export type DeleteDrawingResponse = {
   id: string;
 };
+
+export type DuplicateDrawingResponse = {
+  drawing: Drawing;
+};

@@ -10,4 +10,5 @@ export type {
   UpdateDrawingRequest,
   UpdateDrawingResponse,
   DeleteDrawingResponse,
+  DuplicateDrawingResponse,
 } from "./drawings";
