@@ -15,6 +15,7 @@ export const drawings = sqliteTable("drawings", {
   scene: text("scene").notNull(),
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+  archivedAt: integer("archived_at", { mode: "timestamp_ms" }),
 });
 
 export type DbUser = typeof users.$inferSelect;
