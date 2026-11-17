@@ -1,13 +1,18 @@
 ---
-description: Route all implementation planning in this repo through the plan and critique subagents
+description: Route implementation planning through the plan and critique subagents unless fast demo is on
 alwaysApply: true
 ---
 
 # Planning workflow
 
-Planning in this repository runs through subagents. Do not hand-write an implementation plan.
+Fast demo skips the planning subagents for short demos. Before drafting a plan, entering Plan mode, or calling `CreatePlan`, read `.cursor/fast-demo`.
 
-Whenever you are about to draft an implementation plan, enter Plan mode, or call `CreatePlan`, run this chain:
+- First line `on`: do not run `explore` for this plan, `plan-subagent`, or `critique-plan-subagent`. Implement directly. If a plan is still useful, write it in the reply. Start that reply with `Fast demo is on.`
+- Missing, empty, or anything other than `on`: run the chain below. Do not hand-write the plan.
+
+`/fast-demo` toggles the switch. When the user asks to turn fast demo on or off, follow `.cursor/skills/fast-demo/SKILL.md`.
+
+## Chain
 
 1. `explore` subagents in parallel to map the affected code. Skip only if you have already read every file the plan will touch.
 2. `plan-subagent` to draft the plan. Pass the ticket or request text verbatim; it cannot see the conversation.
