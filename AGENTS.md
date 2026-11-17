@@ -11,7 +11,7 @@ Excalidraw is a **monorepo** with a clear separation between the core library an
 
 ## Development Workflow
 
-1. **Planning**: Delegate every implementation plan to `plan-subagent`, then review it with `critique-plan-subagent`. Never hand-write a plan. See `.cursor/rules/planning-workflow.mdc`
+1. **Planning**: Follow `.cursor/rules/planning-workflow.mdc`. That runs `plan-subagent`, then `critique-plan-subagent`. `/fast-demo` turns that chain off for local demos.
 2. **Package Development**: Work in `packages/*` for editor features
 3. **App Development**: Work in `excalidraw-app/` for app-specific features
 4. **Testing**: Always run `yarn test:update` before committing
